@@ -2,11 +2,11 @@
   "name": "stop-loss-trading-bot-html-v2",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "keywords": [],
   "engines": {
