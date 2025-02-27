@@ -567,10 +567,6 @@ async function scanWalletAndUpdateTransaction(
     return updatedTransaction;
   }
 }
-
-app.get("/", (req, res) => {
-  res.sendFile("index.html", { root: "./public" });
-});
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
