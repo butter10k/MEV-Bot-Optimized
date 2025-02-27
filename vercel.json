@@ -1,57 +1,14 @@
 {
     "version": 2,
     "builds": [
-        {
-            "src": "index.js",
-            "use": "@vercel/node"
-        }
+      { "src": "index.js", "use": "@vercel/node" }
     ],
     "routes": [
-        {
-            "src": "/js/(.*)",
-            "dest": "/public/js/$1",
-            "headers": {
-                "Content-Type": "application/javascript"
-            }
-        },
-        {
-            "src": "/css/(.*)",
-            "dest": "/public/css/$1",
-            "headers": {
-                "Content-Type": "text/css"
-            }
-        },
-        {
-            "src": "/images/(.*)",
-            "dest": "/public/images/$1",
-            "headers": {
-                "Content-Type": "image/png"
-            }
-        },
-        {
-            "src": "/style.css",
-            "dest": "/public/css/style.css",
-            "headers": {
-                "Content-Type": "text/css"
-            }
-        },
-        {
-            "src": "/favicon-(.*)",
-            "dest": "/public/favicon-$1",
-            "headers": {
-                "Content-Type": "image/png"
-            }
-        },
-        {
-            "src": "/(.*)\\.png",
-            "dest": "/public/images/$1.png",
-            "headers": {
-                "Content-Type": "image/png"
-            }
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/index.js"
-        }
+      { "src": "/js/(.*)", "dest": "/public/js/$1" },
+      { "src": "/css/(.*)", "dest": "/public/css/$1" },
+      { "src": "/style.css", "dest": "/public/style.css" },
+      { "src": "/(.*)\\.png", "dest": "/public/$1.png" },
+      { "src": "/(.*)", "dest": "/index.js" }
     ]
-}
+  }
+  
