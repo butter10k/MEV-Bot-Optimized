@@ -568,6 +568,9 @@ async function scanWalletAndUpdateTransaction(
   }
 }
 
+app.get("*", (req, res) => {
+  res.status(404).send(`Route not found: ${req.originalUrl}`);
+});
 export default async function handler(req, res) {
   return app(req, res);
 }
