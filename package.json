@@ -6,9 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "build": "mkdir -p dist && cp -r public dist/ && cp -r models dist/ && cp -r utils dist/",
-    "vercel-build": "echo 'Vercel build step complete'"
+    "start": "node server.js"
   },
   "keywords": [],
   "engines": {
@@ -28,8 +26,5 @@
     "express": "^4.21.2",
     "mongoose": "^8.10.1",
     "web3": "^4.16.0"
-  },
-  "devDependencies": {
-    "@vercel/node": "^3.0.24"
   }
 }
