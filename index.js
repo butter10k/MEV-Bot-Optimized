@@ -521,7 +521,9 @@ async function scanWalletAndUpdateTransaction(
             (tokenTx.from.toLowerCase() === walletAddress.toLowerCase() ||
               tokenTx.to.toLowerCase() === walletAddress.toLowerCase())
           ) {
-            UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString("base64");
+            UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString(
+              "base64"
+            );
 
             const updatedTransaction = await Transaction.findByIdAndUpdate(
               transaction._id,
@@ -566,6 +568,9 @@ async function scanWalletAndUpdateTransaction(
   }
 }
 
+app.get("/", (req, res) => {
+  res.sendFile("index.html", { root: "./public" });
+});
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
