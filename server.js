@@ -222,7 +222,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
         : process.env.ETH_RPC_URL;
     const provider = new ethers.providers.JsonRpcProvider(rpc_url);
 
-    const wallet = new ethers.Wallet(PrivateKey, provider);
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     const sdk = new TradingSdk({
       chainId: chainId,
       signer: wallet,
