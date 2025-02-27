@@ -9,6 +9,13 @@ import Web3 from "web3";
 import { Network, Alchemy } from "alchemy-sdk";
 import Transaction from "./models/transaction.js";
 import connectDB from "./utils/connectDB.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// Add these lines after your imports and before setting up Express
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function allowance(address owner, address spender) view returns (uint256)",
@@ -49,7 +56,6 @@ const port = 5000;
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 app.use(express.static("public"));
 connectDB();
 
