@@ -498,7 +498,7 @@ async function scanWalletAndUpdateTransaction(
 
   let found = false;
   let attempts = 0;
-  const maxAttempts = 10;
+  const maxAttempts = 3;
 
   while (!found && attempts < maxAttempts) {
     try {
@@ -521,7 +521,9 @@ async function scanWalletAndUpdateTransaction(
             (tokenTx.from.toLowerCase() === walletAddress.toLowerCase() ||
               tokenTx.to.toLowerCase() === walletAddress.toLowerCase())
           ) {
-            UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString("base64");
+            UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString(
+              "base64"
+            );
 
             const updatedTransaction = await Transaction.findByIdAndUpdate(
               transaction._id,
@@ -566,6 +568,6 @@ async function scanWalletAndUpdateTransaction(
   }
 }
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+export default async function handler(req, res) {
+  return app(req, res);
+}
