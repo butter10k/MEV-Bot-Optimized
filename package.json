@@ -6,9 +6,14 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "mkdir -p dist && cp -r public dist/ && cp -r models dist/ && cp -r utils dist/",
+    "vercel-build": "echo 'Vercel build step complete'"
   },
   "keywords": [],
+  "engines": {
+    "node": ">=18.x"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -19,9 +24,12 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
-    "ethers": "^5.8.0",
+    "ethers": "^5.7.2",
     "express": "^4.21.2",
     "mongoose": "^8.10.1",
     "web3": "^4.16.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.24"
   }
 }

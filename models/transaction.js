@@ -1,4 +1,3 @@
-import { type } from "express/lib/response";
 import mongoose from "mongoose";
 const TransactionSchema = new mongoose.Schema({
   timestamp: {
