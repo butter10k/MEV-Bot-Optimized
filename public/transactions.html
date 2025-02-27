@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Swap History</title>
+	<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+</head>
+
+<body>
+
+	<!-- Navbar -->
+	<div class="navbar">
+		<div class="brand"><img src="logo-symbol.png"></div>
+		<div class="menu">
+			<a href="index.html">Dashboard</a>
+			<a href="transactions.html" class="active"><span>Swap </span>History</a>
+		</div>
+		<div class="wallet-container">
+			<div class="bot-status">
+				<span id="statusIndicator" class="status-indicator paused">
+					<span class="dot"></span>
+					<span id="statusText">Bot Paused</span>
+				</span>
+			</div>
+			<div class="chain-select-container">
+				<select id="chain" class="chain-select">
+					<option value="ethereum">Ethereum</option>
+					<option value="arbitrum">Arbitrum</option>
+					<option value="base">Base</option>
+					<option value="optimism">Optimism</option>
+				</select>
+				<img src="dropdown.png">
+			</div>
+			<button id="connectButton" class="connect-button" onclick="connectWallet()">Connect Wallet</button>
+			<div id="walletInfo" class="wallet-info" style="display: none;">
+				<img src="wallet.png">
+				<span id="walletBalance">0.00 ETH</span>
+				<span id="walletAddress">0x00...000</span>
+			</div>
+		</div>
+	</div>
+	<!-- Page Content -->
+	<div class="container transactions">
+		<div class="card">
+			<h3>Swap History</h3>
+			<p>Recent stop-loss trades executed by the bot.</p>
+
+			<!-- Transaction List -->
+			<div class="transaction-list" id="transactionLog">
+				<div class="transaction-item title">
+					<div>Transaction Hash</div>
+					<div>Date &amp; Time</div>
+					<div>Quantity</div>
+					<div>Type</div>
+				</div>
+				<!-- Transactions will be dynamically added here -->
+			</div>
+
+			<button onclick="loadTransactions()">Refresh Transactions</button>
+		</div>
+	</div>
+	<script>
+		async function loadTransactions() {
+			try {
+				const response = await fetch('/api/transactions/history');
+				const transactions = await response.json();
+
+				const container = document.getElementById('transactionLog');
+				// Keep the title row
+				const titleRow = container.querySelector('.transaction-item.title');
+				container.innerHTML = '';
+				container.appendChild(titleRow);
+
+				transactions.forEach(tx => {
+					const item = document.createElement('div');
+					item.className = 'transaction-item';
+
+					const type = tx.fromToken === 'ETH' ? 'Sell' : 'Buy';
+					const amount = type === 'Sell' ? tx.fromAmount : tx.toAmount;
+					const token = type === 'Sell' ? tx.fromToken : tx.toToken;
+
+					item.innerHTML = `
+                <div>
+                    <a class="transaction-hash" 
+                       href="${getExplorerUrl(tx.chainId, tx.txHash)}" 
+                       target="_blank">
+                        ${formatTxHash(tx.txHash)}
+                    </a>
+                </div>
+                <div>${new Date(tx.timestamp).toLocaleString()}</div>
+                <div>
+                    <b>${type}</b> ${formatAmount(amount)} ${token} at $${tx.price}
+                </div>
+                <div class="status status-${type.toLowerCase()}">
+                    ${type}
+                </div>
+            `;
+
+					container.appendChild(item);
+				});
+			} catch (error) {
+				console.error('Error loading transactions:', error);
+			}
+		}
+
+		function formatAmount(amount) {
+			return parseFloat(amount).toFixed(6);
+		}
+
+		function formatTxHash(hash) {
+			return `${hash.substring(0, 6)}...${hash.substring(62)}`;
+		}
+
+		function getExplorerUrl(chainId, txHash) {
+			const explorers = {
+				1: 'https://etherscan.io',
+				42161: 'https://arbiscan.io',
+				10: 'https://optimistic.etherscan.io',
+				8453: 'https://basescan.org'
+			};
+			return `${explorers[chainId]}/tx/${txHash}`;
+		}
+
+		// Load transactions when page loads
+		document.addEventListener('DOMContentLoaded', loadTransactions);
+
+		// Refresh button functionality
+		document.querySelector('button[onclick="loadTransactions()"]')
+			.addEventListener('click', loadTransactions);
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+	<script src="/js/wallet.js"></script>
+	<script src="/js/trading.js"></script>
+</body>
+
+</html>
