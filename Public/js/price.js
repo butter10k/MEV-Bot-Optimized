@@ -1,0 +1,57 @@
+const CHAINS = {
+  ethereum: 1,
+  arbitrum: 42161,
+  optimism: 10,
+  base: 8453,
+};
+
+let currentPrice = 0;
+let stopLossThreshold = 0;
+let isTrading = false;
+let initialETHAmount = 0;
+
+async function getETHPrice() {
+  try {
+    const response = await fetch('/api/price');
+    const responseData = await response.json();
+
+    currentPrice = parseFloat(responseData);
+    document.querySelector(
+      ".currentPrice span"
+    ).textContent = `${currentPrice.toFixed(2)}`;
+
+    return currentPrice;
+  } catch (error) {
+    console.log("Error fetching ETH price:", error);
+    return null;
+  }
+}
+
+function updateStablecoinOptions() {
+  const selectedChain = document.getElementById("chain").value;
+  const stablecoinSelect = document.getElementById("stablecoin");
+  if (!stablecoinSelect) return;
+  stablecoinSelect.innerHTML = "";
+
+  if (selectedChain === "base") {
+    stablecoinSelect.add(new Option("USDC", "USDC"));
+    stablecoinSelect.add(new Option("DAI", "DAI"));
+  } else {
+    stablecoinSelect.add(new Option("USDT", "USDT"));
+    stablecoinSelect.add(new Option("USDC", "USDC"));
+    stablecoinSelect.add(new Option("DAI", "DAI"));
+  }
+}
+
+// Add event listeners
+document
+  .getElementById("chain")
+  .addEventListener("change", updateStablecoinOptions);
+document
+  .getElementById("dexAggregator")
+  .addEventListener("change", getETHPrice);
+document.addEventListener("DOMContentLoaded", () => {
+  getETHPrice();
+});
+
+setInterval(getETHPrice, 10000);

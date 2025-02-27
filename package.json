@@ -1,0 +1,28 @@
+{
+  "name": "stop-loss-trading-bot-html-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@1inch/fusion-sdk": "^2.1.4",
+    "@cowprotocol/cow-sdk": "^5.10.1-RC.0",
+    "@ethersproject/providers": "^5.7.2",
+    "alchemy-sdk": "^3.5.3",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "ethers": "5.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.10.1",
+    "web3": "^4.16.0"
+  }
+}
