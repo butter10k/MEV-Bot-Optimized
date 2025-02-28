@@ -575,7 +575,6 @@ async function scanWalletAndUpdateTransaction(
       { status: "pending" },
       { new: true }
     );
-    console.log(`No matching transaction found after ${maxAttempts} attempts`);
     return updatedTransaction;
   }
 }
