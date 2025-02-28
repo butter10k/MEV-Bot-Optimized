@@ -174,11 +174,7 @@ class TradingBot {
         }
 
         const waitTime = isTimeout ? 2000 : 5000 * retries;
-        toastr.warning(
-          `Swap attempt ${retries}/${maxRetries} failed. ${
-            isTimeout ? "Timeout occurred" : error.message
-          }. Retrying in ${waitTime / 1000}s...`
-        );
+        toastr.warning(`Swap attempt ${retries}/${maxRetries} failed. `);
 
         // Wait before retrying
         await new Promise((resolve) => setTimeout(resolve, waitTime));
