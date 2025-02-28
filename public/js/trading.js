@@ -136,7 +136,7 @@ class TradingBot {
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 100000);
+        const timeoutId = setTimeout(() => controller.abort(), 1000000);
 
         const response = await fetch(apiUrl, {
           method: "POST",

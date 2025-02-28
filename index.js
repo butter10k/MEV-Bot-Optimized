@@ -24,7 +24,7 @@ const ERC20_ABI = [
 
 const LIMIT_ORDER_CONTRACT = "0x111111125421cA6dc452d289314280a0f8842A65";
 const COWSWAP_CONTRACT = "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110";
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 10;
 let UNIQUE_ID = "0x0000000000000000000000000000000000000000";
 const TOKENS = {
   1: {
@@ -507,7 +507,7 @@ async function scanWalletAndUpdateTransaction(
 
   let found = false;
   let attempts = 0;
-  const maxAttempts = 100;
+  const maxAttempts = 10;
 
   while (!found && attempts < maxAttempts) {
     try {
