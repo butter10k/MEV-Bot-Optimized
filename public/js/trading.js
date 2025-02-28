@@ -76,14 +76,14 @@ class TradingBot {
     const swapService = document.getElementById("dexAggregator").value;
 
     while (this.isActive) {
-      const currentTime = new Date().getTime() - new Date().getTimezoneOffset() * 60000;
+      const currentTime =
+        new Date().getTime() - new Date().getTimezoneOffset() * 60000;
       console.log("Current time:", currentTime);
       const timeSinceLastTrade = currentTime - this.lastTradeTime;
       const adjustedStopLoss = this.stopLossPrice - this.buffer;
       console.log("Time since last trade:", timeSinceLastTrade);
       console.log("Last trade time:", this.lastTradeTime);
       console.log("Current position:", this.currentPosition);
-      
 
       if (timeSinceLastTrade >= this.cooldown * 1000) {
         console.log("Checking for trade opportunities...");
@@ -109,52 +109,90 @@ class TradingBot {
 
   async executeSwap(fromToken, toToken, swapService) {
     console.log(`Executing swap: ${fromToken} → ${toToken}`);
-    try {
-      const txData = {
-        chainId: CHAINS[document.getElementById("chain").value],
-        fromToken,
-        toToken,
-        amount: web3.utils.toWei(
-          (this.currentAmount || this.initialAmount).toString(),
-          "ether"
-        ),
-        slippage: this.slippage,
-        gasPriority: this.gasPriority,
-      };
+    const maxRetries = 3;
+    let retries = 0;
 
-      let apiUrl;
-      if (swapService === "1inch") {
-        apiUrl = "/api/1inch/swap";
-      } else if (swapService === "cowswap") {
-        apiUrl = "/api/cowswap/swap";
-      } else {
-        throw new Error("Invalid swap service selected");
-      }
+    while (retries < maxRetries) {
+      try {
+        const txData = {
+          chainId: CHAINS[document.getElementById("chain").value],
+          fromToken,
+          toToken,
+          amount: web3.utils.toWei(
+            (this.currentAmount || this.initialAmount).toString(),
+            "ether"
+          ),
+          slippage: this.slippage,
+          gasPriority: this.gasPriority,
+        };
 
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(txData),
-      });
+        let apiUrl;
+        if (swapService === "1inch") {
+          apiUrl = "/api/1inch/swap";
+        } else if (swapService === "cowswap") {
+          apiUrl = "/api/cowswap/swap";
+        } else {
+          throw new Error("Invalid swap service selected");
+        }
 
-      const data = await response.json();
+        // Create an AbortController to handle timeouts
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
-      if (response.ok && data.success) {
-        toastr.success(`Trade executed successfully`);
-        addToLog(
-          `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(txData),
+          signal: controller.signal,
+        });
+
+        // Clear the timeout
+        clearTimeout(timeoutId);
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          toastr.success(`Trade executed successfully`);
+          addToLog(
+            `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
+          );
+          return true;
+        } else if (response.status === 500) {
+          toastr.error(`Not enough balance for swapping.`);
+          return false;
+        } else {
+          throw new Error(data.error || "Unknown error occurred");
+        }
+      } catch (error) {
+        retries++;
+        const isTimeout = error.name === "AbortError";
+
+        if (retries >= maxRetries) {
+          toastr.error(
+            `Trade failed after ${maxRetries} attempts: ${error.message}`
+          );
+          addToLog(`Failed swap: ${fromToken} → ${toToken} - ${error.message}`);
+          return false;
+        }
+
+        const waitTime = isTimeout ? 2000 : 5000 * retries;
+        toastr.warning(
+          `Swap attempt ${retries}/${maxRetries} failed. ${
+            isTimeout ? "Timeout occurred" : error.message
+          }. Retrying in ${waitTime / 1000}s...`
         );
-      } else if (response.status === 500) {
-        toastr.error(`Not enough balance for swapping.`);
-      } else {
-        toastr.error(`Trade failed: ${data.error || "Unknown error occurred"}`);
-      }
 
-      return;
-    } catch (error) {
-      toastr.error(`Trade failed: ${error.message}`);
-      throw error;
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+        console.log(
+          `Retrying swap: ${fromToken} → ${toToken} (Attempt ${
+            retries + 1
+          }/${maxRetries})`
+        );
+      }
     }
+
+    return false;
   }
 }
 
@@ -292,7 +330,7 @@ function saveLogToLocalStorage(logEntry) {
 async function loadLogs() {
   const logs = JSON.parse(localStorage.getItem("logs")) || [];
   const logContainer = document.getElementById("log");
-  
+
   // Check if the log container exists before trying to use it
   if (!logContainer) {
     // console.error("Log container element with ID 'log' not found in the document");
