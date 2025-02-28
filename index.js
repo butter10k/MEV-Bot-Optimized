@@ -161,7 +161,7 @@ app.post("/api/1inch/swap", async (req, res) => {
         toTokenAddress: TOKENS[chainId][toToken],
         amount: amount.toString(),
         walletAddress: wallet.address,
-        gasPriority: gasPriority,
+        preset: gasPriority,
       })
     );
 

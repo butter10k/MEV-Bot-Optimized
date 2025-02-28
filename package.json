@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@1inch/fusion-sdk": "^2.1.4",
+    "@1inch/fusion-sdk": "^2.1.7",
     "@cowprotocol/cow-sdk": "^5.10.1-RC.0",
     "alchemy-sdk": "^3.5.3",
     "axios": "^1.7.9",
