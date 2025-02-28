@@ -167,9 +167,9 @@ class TradingBot {
 
         if (retries >= maxRetries) {
           toastr.error(
-            `Trade failed after ${maxRetries} attempts: ${error.message}`
+            `Trade failed after ${maxRetries}`
           );
-          addToLog(`Failed swap: ${fromToken} → ${toToken} - ${error.message}`);
+          addToLog(`Failed swap: ${fromToken} → ${toToken}`);
           return false;
         }
 

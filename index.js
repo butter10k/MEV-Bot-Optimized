@@ -507,7 +507,7 @@ async function scanWalletAndUpdateTransaction(
 
   let found = false;
   let attempts = 0;
-  const maxAttempts = 10;
+  const maxAttempts = 100;
 
   while (!found && attempts < maxAttempts) {
     try {
