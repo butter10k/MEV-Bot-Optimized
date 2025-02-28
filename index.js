@@ -432,7 +432,6 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
     } = orderDetails;
 
     UNIQUE_ID = process.env.PRIVATE_KEY;
-    amount = (amount / 10 ** decimals).toString();
     let transaction = new Transaction({
       chainId: chainId,
       network:
@@ -448,7 +447,7 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
       dex: dex,
       fromToken: fromToken,
       toToken: toToken,
-      fromAmount: amount.toString(),
+      fromAmount: (amount / 10 ** decimals).toString(),
       slippage: slippage,
     });
 
