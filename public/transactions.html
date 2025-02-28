@@ -12,6 +12,48 @@
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<style>
+		.empty-message,
+		.error-message {
+			text-align: center;
+			padding: 2rem;
+			color: #666;
+			width: 100%;
+		}
+
+		.error-message {
+			color: #e74c3c;
+		}
+
+		.loading-spinner {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 2rem;
+			width: 100%;
+		}
+
+		.spinner {
+			border: 4px solid rgba(0, 0, 0, 0.1);
+			width: 36px;
+			height: 36px;
+			border-radius: 50%;
+			border-left-color: #3e8fff;
+			animation: spin 1s linear infinite;
+			margin-bottom: 1rem;
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+	</style>
 </head>
 
 <body>
@@ -47,13 +89,11 @@
 			</div>
 		</div>
 	</div>
-	<!-- Page Content -->
 	<div class="container transactions">
 		<div class="card">
 			<h3>Swap History</h3>
 			<p>Recent stop-loss trades executed by the bot.</p>
 
-			<!-- Transaction List -->
 			<div class="transaction-list" id="transactionLog">
 				<div class="transaction-item title">
 					<div>Transaction Hash</div>
@@ -61,23 +101,36 @@
 					<div>Quantity</div>
 					<div>Type</div>
 				</div>
-				<!-- Transactions will be dynamically added here -->
 			</div>
 
+			<div id="loadingSpinner" class="loading-spinner" style="display: none;">
+				<div class="spinner"></div>
+				<p>Loading transactions...</p>
+			</div>
 			<button onclick="loadTransactions()">Refresh Transactions</button>
 		</div>
 	</div>
 	<script>
 		async function loadTransactions() {
 			try {
+				const spinner = document.getElementById('loadingSpinner');
+				const container = document.getElementById('transactionLog');
+				const titleRow = container.querySelector('.transaction-item.title');
+				spinner.style.display = 'flex';
+
 				const response = await fetch('/api/transactions/history');
 				const transactions = await response.json();
 
-				const container = document.getElementById('transactionLog');
-				// Keep the title row
-				const titleRow = container.querySelector('.transaction-item.title');
+				spinner.style.display = 'none';
 				container.innerHTML = '';
-				container.appendChild(titleRow);
+
+				if (transactions.length === 0) {
+					const emptyMessage = document.createElement('div');
+					emptyMessage.className = 'empty-message';
+					emptyMessage.textContent = 'No transactions found.';
+					container.appendChild(emptyMessage);
+					return;
+				}
 
 				transactions.forEach(tx => {
 					const item = document.createElement('div');
@@ -88,26 +141,33 @@
 					const token = type === 'Sell' ? tx.fromToken : tx.toToken;
 
 					item.innerHTML = `
-                <div>
-                    <a class="transaction-hash" 
-                       href="${getExplorerUrl(tx.chainId, tx.txHash)}" 
-                       target="_blank">
-                        ${formatTxHash(tx.txHash)}
-                    </a>
-                </div>
-                <div>${new Date(tx.timestamp).toLocaleString()}</div>
-                <div>
-                    <b>${type}</b> ${formatAmount(amount)} ${token} at $${tx.price}
-                </div>
-                <div class="status status-${type.toLowerCase()}">
-                    ${type}
-                </div>
-            `;
+						<div>
+						<a class="transaction-hash" 
+							href="${getExplorerUrl(tx.chainId, tx.txHash)}" 
+							target="_blank">
+							${formatTxHash(tx.txHash)}
+						</a>
+						</div>
+						<div>${new Date(tx.timestamp).toLocaleString('en-US', { timeZone: 'UTC' })}</div>
+						<div>
+						<b>${type}</b> ${formatAmount(amount)} ${token} at ${tx.price}
+						</div>
+						<div class="status status-${type.toLowerCase()}">
+						${type}
+						</div>
+					`;
 
 					container.appendChild(item);
 				});
 			} catch (error) {
+				document.getElementById('loadingSpinner').style.display = 'none';
 				console.error('Error loading transactions:', error);
+
+				const container = document.getElementById('transactionLog');
+				const errorMessage = document.createElement('div');
+				errorMessage.className = 'error-message';
+				errorMessage.textContent = 'Failed to load transactions. Please try again.';
+				container.appendChild(errorMessage);
 			}
 		}
 
@@ -129,13 +189,11 @@
 			return `${explorers[chainId]}/tx/${txHash}`;
 		}
 
-		// Load transactions when page loads
 		document.addEventListener('DOMContentLoaded', loadTransactions);
-
-		// Refresh button functionality
 		document.querySelector('button[onclick="loadTransactions()"]')
 			.addEventListener('click', loadTransactions);
 	</script>
+
 	<script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
 	<script src="/js/wallet.js"></script>
 	<script src="/js/trading.js"></script>
