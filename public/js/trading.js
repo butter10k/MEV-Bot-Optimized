@@ -135,9 +135,8 @@ class TradingBot {
           throw new Error("Invalid swap service selected");
         }
 
-        // Create an AbortController to handle timeouts
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
         const response = await fetch(apiUrl, {
           method: "POST",
@@ -146,7 +145,6 @@ class TradingBot {
           signal: controller.signal,
         });
 
-        // Clear the timeout
         clearTimeout(timeoutId);
 
         const data = await response.json();
@@ -161,7 +159,7 @@ class TradingBot {
           toastr.error(`Not enough balance for swapping.`);
           return false;
         } else {
-          throw new Error(data.error || "Unknown error occurred");
+          throw new Error("Swapping failed");
         }
       } catch (error) {
         retries++;
