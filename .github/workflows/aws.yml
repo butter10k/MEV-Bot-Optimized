@@ -2,110 +2,113 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
+        ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+        cd $HOME
 
-      - name: Deploy to EC2
-        env:
-          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          HOST: ${{ secrets.EC2_HOST }}
-          USER: ${{ secrets.EC2_USER }}
-        run: |
-          echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
-          ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
-          cd $HOME
-
-          # Install NVM and Node.js
-          echo "Installing Node.js..."
+        # Install NVM and Node.js
+        echo "Installing Node.js..."
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        if ! command -v nvm &> /dev/null; then
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+          source $HOME/.bashrc
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          if ! command -v nvm &> /dev/null; then
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-            source $HOME/.bashrc
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          fi
-          nvm install --lts
-          nvm use --lts
+        fi
+        nvm install --lts
+        nvm use --lts
 
-          # Install PM2 globally
-          echo "Installing PM2..."
-          npm install -g pm2
+        # Install PM2 globally
+        echo "Installing PM2..."
+        npm install -g pm2
 
-          # Set up application directory
-          APP_DIR="$HOME/Stop_loss-TradingBot"
-
-          # Clone or update repository
-          if [ -d "$APP_DIR" ]; then
-            cd "$APP_DIR"
-            git fetch origin main
-            git reset --hard origin/main
-          else
-            # Setup SSH for GitHub authentication
-            mkdir -p ~/.ssh
-            echo "${{ secrets.GIT_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
+        # Set up application directory
+        APP_DIR="$HOME/Stop_loss-TradingBot"
+        
+        # Clone or update repository
+        if [ -d "$APP_DIR" ]; then
+          cd "$APP_DIR"
+          git fetch origin main
+          git reset --hard origin/main
+        else
+          # Setup SSH for GitHub authentication
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GIT_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
             
-            # Clone using SSH
-            git clone git@github.com:butter1011/Stop_loss-TradingBot.git "$APP_DIR"
-            cd "$APP_DIR"
-          fi
-          # Install dependencies
-          npm install
+          # Clone using SSH
+          git clone git@github.com:butter1011/Stop_loss-TradingBot.git "$APP_DIR"
+          cd "$APP_DIR"
+        fi
 
-          # Create or update .env file with necessary environment variables
-          cat > .env << EOL
-          PORT=5000
-          MONGODB_URI=${{ secrets.MONGODB_URI }}
-          PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}
-          ETH_RPC_URL=${{ secrets.ETH_RPC_URL }}
-          ARBITRUM_RPC_URL=${{ secrets.ARBITRUM_RPC_URL }}
-          OPTIMISM_RPC_URL=${{ secrets.OPTIMISM_RPC_URL }}
-          BASE_RPC_URL=${{ secrets.BASE_RPC_URL }}
-          INCH_API_KEY=${{ secrets.INCH_API_KEY }}
-          INCH_API_SWAP_URL=${{ secrets.INCH_API_SWAP_URL }}
-          ALCHEMY_API_KEY=${{ secrets.ALCHEMY_API_KEY }}
-          ETHERSCAN_API_KEY=${{ secrets.ETHERSCAN_API_KEY }}
-          ARBISCAN_API_KEY=${{ secrets.ARBISCAN_API_KEY }}
-          OPTIMISM_API_KEY=${{ secrets.OPTIMISM_API_KEY }}
-          BASESCAN_API_KEY=${{ secrets.BASESCAN_API_KEY }}
-          EOL
+        # Install dependencies
+        npm install
 
-          # Create or update ecosystem.config.js for PM2
-          cat > ecosystem.config.js << EOL
-          module.exports = {
-            apps : [{
-              name: "stop-loss-bot",
-              script: "index.js",
-              watch: false,
-              max_memory_restart: "500M",
-              env: {
-                NODE_ENV: "production",
-              },
-              log_date_format: "YYYY-MM-DD HH:mm:ss",
-              merge_logs: true
-            }]
-          }
-          EOL
+        # Create or update .env file with necessary environment variables
+        cat > .env << EOL
+        PORT=5000
+        MONGODB_URI=${{ secrets.MONGODB_URI }}
+        PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}
+        ETH_RPC_URL=${{ secrets.ETH_RPC_URL }}
+        ARBITRUM_RPC_URL=${{ secrets.ARBITRUM_RPC_URL }}
+        OPTIMISM_RPC_URL=${{ secrets.OPTIMISM_RPC_URL }}
+        BASE_RPC_URL=${{ secrets.BASE_RPC_URL }}
+        INCH_API_KEY=${{ secrets.INCH_API_KEY }}
+        INCH_API_SWAP_URL=${{ secrets.INCH_API_SWAP_URL }}
+        ALCHEMY_API_KEY=${{ secrets.ALCHEMY_API_KEY }}
+        ETHERSCAN_API_KEY=${{ secrets.ETHERSCAN_API_KEY }}
+        ARBISCAN_API_KEY=${{ secrets.ARBISCAN_API_KEY }}
+        OPTIMISM_API_KEY=${{ secrets.OPTIMISM_API_KEY }}
+        BASESCAN_API_KEY=${{ secrets.BASESCAN_API_KEY }}
+        PROXY_URL=${{ secrets.PROXY_URL }}
+        PROXY_LIST=${{ secrets.PROXY_LIST }}
+        EOL
 
-          # Start/Restart the application with PM2
-          echo "Starting/restarting application..."
-          pm2 describe stop-loss-bot > /dev/null
-          if [ $? -eq 0 ]; then
-            pm2 restart ecosystem.config.js
-          else
-            pm2 start ecosystem.config.js
-          fi
+        # Create or update ecosystem.config.js for PM2
+        cat > ecosystem.config.js << EOL
+        module.exports = {
+          apps : [{
+            name: "stop-loss-bot",
+            script: "index.js",
+            watch: false,
+            max_memory_restart: "500M",
+            env: {
+              NODE_ENV: "production",
+            },
+            log_date_format: "YYYY-MM-DD HH:mm:ss",
+            merge_logs: true
+          }]
+        }
+        EOL
 
-          # Save PM2 process list and set to start on system boot
-          pm2 save
-          pm2 startup
+        # Start/Restart the application with PM2
+        echo "Starting/restarting application..."
+        pm2 describe stop-loss-bot > /dev/null
+        if [ $? -eq 0 ]; then
+          pm2 restart ecosystem.config.js
+        else
+          pm2 start ecosystem.config.js
+        fi
 
-          echo "Deployment completed successfully"
-          '
+        # Save PM2 process list and set to start on system boot
+        pm2 save
+        pm2 startup
+
+        echo "Deployment completed successfully"
+        '
