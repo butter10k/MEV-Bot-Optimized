@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -14,17 +14,17 @@ jobs:
     - name: Install SSH key
       uses: webfactory/ssh-agent@v0.5.4
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
         
     - name: Add host key to known_hosts
       run: |
         mkdir -p ~/.ssh
-        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{ secrets.HOST_DNS }} >> ~/.ssh/known_hosts
         
     - name: Deploy to EC2
       run: |
-        ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
-          cd /path/to/your/app &&
+        ssh ${{ secrets.USERNAME }}@${{ secrets.HOST_DNS }} '
+          cd ${{ secrets.TARGET_DIR }} &&
           git pull origin main &&
           npm install &&
           pm2 restart all
