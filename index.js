@@ -130,6 +130,8 @@ app.post("/api/1inch/swap", async (req, res) => {
       authKey: process.env.INCH_API_KEY,
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     const currentAllowance = await tokenContract.allowance(
       wallet.address,
       LIMIT_ORDER_CONTRACT
@@ -236,6 +238,8 @@ app.post("/api/cowswap/swap", async (req, res) => {
       chainId: chainId,
       signer: wallet,
     });
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const tokenContract = new Contract(
       TOKENS[chainId][fromToken],
@@ -405,7 +409,7 @@ const fetchWithRetry = async (fetchFunction, retries = MAX_RETRIES) => {
         );
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       } else {
-        throw error;
+        console.error("Error:", error);
       }
     }
   }
@@ -456,7 +460,6 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
     return transaction;
   } catch (error) {
     console.error("Error tracking order:", error);
-    throw error;
   }
 }
 
@@ -556,7 +559,7 @@ async function scanWalletAndUpdateTransaction(
 
       attempts++;
       console.log(
-        `Attempt ${attempts}/${maxAttempts} - No matching transaction found yet, retrying in 5 seconds...`
+        `Attempt ${attempts}/${maxAttempts} - No matching transaction found yet`
       );
       await new Promise((resolve) => setTimeout(resolve, 5000));
     } catch (error) {
