@@ -1,0 +1,69 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
+        ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} '
+        cd $HOME
+
+        # Install NVM and Node.js
+        echo "Installing Node.js..."
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        if ! command -v nvm &> /dev/null; then
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+          source $HOME/.bashrc
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        fi
+        nvm install --lts
+        nvm use --lts
+
+        # Install PM2 globally
+        echo "Installing PM2..."
+        npm install -g pm2
+
+        # Set up application directory
+        APP_DIR="$HOME/Stop_loss-TradingBot"
+        
+        # Clone or update repository
+        if [ -d "$APP_DIR" ]; then
+          cd "$APP_DIR"
+          git fetch origin main
+          git reset --hard origin/main
+        else
+          git clone https://github.com/butter1011/Stop_loss-TradingBot.git "$APP_DIR"
+          cd "$APP_DIR"
+        fi
+
+        # Install dependencies
+        npm install --production
+
+        # Start/Restart the application
+        echo "Starting/restarting application..."
+        pm2 describe index.js > /dev/null
+        if [ $? -eq 0 ]; then
+          pm2 restart index.js
+        else
+          pm2 start index.js
+        fi
+
+        # Save PM2 process list
+        pm2 save
+
+        echo "Deployment completed successfully"
+        '
