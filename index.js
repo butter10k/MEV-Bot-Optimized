@@ -69,18 +69,21 @@ app.get("/", (req, res) => {
  * @returns {Promise<void>} - A Promise that resolves when the response is sent.
  */
 app.get("/api/price", async (req, res) => {
+  const settings = {
+    apiKey: process.env.ALCHEMY_API_KEY,
+    network: Network.ETH_MAINNET,
+  };
+  const alchemy = new Alchemy(settings);
+  const symbols = ["ETH"];
+
   try {
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-      params: {
-        ids: 'ethereum',
-        vs_currencies: 'usd'
-      }
-    });
-    res.json(response.data.ethereum.usd);
+    const prices = await alchemy.prices.getTokenPriceBySymbol(symbols);
+    res.json(prices.data[0].prices[0].value);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
 app.post("/api/1inch/swap", async (req, res) => {
   let {
     chainId,
@@ -172,7 +175,7 @@ app.post("/api/1inch/swap", async (req, res) => {
         toToken,
         amount,
         slippage,
-        gasPriority,
+        decimals,
       },
       "1inch"
     );
@@ -425,10 +428,11 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
       toToken,
       amount,
       slippage = 1,
-      gasPriority = "normal",
+      decimals,
     } = orderDetails;
 
     UNIQUE_ID = process.env.PRIVATE_KEY;
+    amount = (amount / 10 ** decimals).toString();
     let transaction = new Transaction({
       chainId: chainId,
       network:
