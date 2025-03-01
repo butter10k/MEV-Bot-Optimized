@@ -537,13 +537,19 @@ async function scanWalletAndUpdateTransaction(
               "base64"
             );
 
+            const toAmount =
+              parseFloat(tokenTx.value) /
+              Math.pow(10, parseInt(tokenTx.tokenDecimal));
+            const price =
+              parseFloat(tokenTx.value) / parseFloat(transaction.fromAmount);
+
             const updatedTransaction = await Transaction.findByIdAndUpdate(
               transaction._id,
               {
                 txHash: tokenTx.hash,
                 status: "completed",
-                toAmount: tokenTx.value / 10 ** tokenTx.tokenDecimal,
-                price: tokenTx.value / tokenTx.fromAmount,
+                toAmount: toAmount || 0,
+                price: isNaN(price) ? 0 : price,
                 timestamp: new Date(timestamp),
                 uniqueId: UNIQUE_ID,
               },
@@ -579,7 +585,8 @@ async function scanWalletAndUpdateTransaction(
     return updatedTransaction;
   }
 }
+
 const port = process.env.PORT || 5000;
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
 });
