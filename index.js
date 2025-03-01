@@ -537,6 +537,10 @@ async function scanWalletAndUpdateTransaction(
               "base64"
             );
 
+            console.log(
+              `Found transaction: ${tokenTx}`
+            );
+
             const updatedTransaction = await Transaction.findByIdAndUpdate(
               transaction._id,
               {
