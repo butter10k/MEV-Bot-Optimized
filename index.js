@@ -287,6 +287,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
         toToken,
         amount,
         slippage,
+        decimals,
       },
       "CowSwap"
     );
@@ -452,7 +453,9 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
       dex: dex,
       fromToken: fromToken,
       toToken: toToken,
-      fromAmount: amount ? (Number(amount) / Math.pow(10, decimals)).toString() : "0",
+      fromAmount: amount
+        ? (Number(amount) / Math.pow(10, decimals)).toString()
+        : "0",
       slippage: slippage,
     });
 
