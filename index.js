@@ -24,7 +24,7 @@ const ERC20_ABI = [
 
 const LIMIT_ORDER_CONTRACT = "0x111111125421cA6dc452d289314280a0f8842A65";
 const COWSWAP_CONTRACT = "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110";
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 10;
 let UNIQUE_ID = "0x0000000000000000000000000000000000000000";
 const TOKENS = {
   1: {
@@ -54,13 +54,10 @@ const TOKENS = {
 
 const app = express();
 app.use(cors());
+app.use(express.static("public"));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 connectDB();
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 /**
  * Handles the API endpoint for fetching the price of WETH to USDT.
  *
@@ -585,5 +582,5 @@ async function scanWalletAndUpdateTransaction(
 }
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server running at http://localhost:${port}`);
 });
