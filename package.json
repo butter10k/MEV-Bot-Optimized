@@ -19,6 +19,7 @@
     "@cowprotocol/cow-sdk": "^5.10.1-RC.0",
     "alchemy-sdk": "^3.5.3",
     "axios": "^1.7.9",
+    "bottleneck": "^2.19.5",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",

@@ -12,6 +12,7 @@ import connectDB from "./utils/connectDB.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import Bottleneck from "bottleneck";
 
 // Add these lines after your imports and before setting up Express
 const __filename = fileURLToPath(import.meta.url);
@@ -26,6 +27,14 @@ const LIMIT_ORDER_CONTRACT = "0x111111125421cA6dc452d289314280a0f8842A65";
 const COWSWAP_CONTRACT = "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110";
 const MAX_RETRIES = 10;
 let UNIQUE_ID = "0x0000000000000000000000000000000000000000";
+
+const inchLimiter = new Bottleneck({
+  maxConcurrent: 1,
+  minTime: 1000,
+  highWater: 10,
+  strategy: Bottleneck.strategy.LEAK,
+  id: "1inch-api-limiter",
+});
 const TOKENS = {
   1: {
     WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -127,7 +136,9 @@ app.post("/api/1inch/swap", async (req, res) => {
       authKey: process.env.INCH_API_KEY,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await inchLimiter.schedule(
+      () => new Promise((resolve) => setTimeout(resolve, 2000))
+    );
 
     const currentAllowance = await tokenContract.allowance(
       wallet.address,
@@ -153,14 +164,16 @@ app.post("/api/1inch/swap", async (req, res) => {
       console.log("Sufficient allowance already exists");
     }
 
-    const orderId = await fetchWithRetry(() =>
-      sdk.placeOrder({
-        fromTokenAddress: TOKENS[chainId][fromToken],
-        toTokenAddress: TOKENS[chainId][toToken],
-        amount: amount.toString(),
-        walletAddress: wallet.address,
-        preset: gasPriority,
-      })
+    const orderId = await inchLimiter.schedule(() =>
+      fetchWithRetry(() =>
+        sdk.placeOrder({
+          fromTokenAddress: TOKENS[chainId][fromToken],
+          toTokenAddress: TOKENS[chainId][toToken],
+          amount: amount.toString(),
+          walletAddress: wallet.address,
+          preset: gasPriority,
+        })
+      )
     );
 
     console.log("Order ID:", orderId);
@@ -398,15 +411,28 @@ const fetchWithRetry = async (fetchFunction, retries = MAX_RETRIES) => {
       return await fetchFunction();
     } catch (error) {
       if (error.response && error.response.status === 429) {
-        const waitTime = Math.pow(2, attempt) * 1000;
+        // Exponential backoff with jitter to prevent all clients retrying simultaneously
+        const baseWaitTime = Math.pow(2, attempt) * 1000; // Exponential base time
+        const jitter = Math.random() * 1000; // Random jitter up to 1 second
+        const waitTime = baseWaitTime + jitter;
+
         console.log(
           `Attempt ${
             attempt + 1
-          } failed with 429. Retrying in ${waitTime} ms...`
+          } failed with 429 (Rate limit exceeded). Retrying in ${waitTime.toFixed(
+            0
+          )} ms...`
         );
+
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       } else {
         console.error("Error:", error);
+        // For non-rate-limit errors, still wait before retrying but less aggressively
+        if (attempt < retries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } else {
+          throw error; // Re-throw on last attempt
+        }
       }
     }
   }
@@ -534,9 +560,7 @@ async function scanWalletAndUpdateTransaction(
               "base64"
             );
 
-            console.log(
-              `Found transaction: ${tokenTx}`
-            );
+            console.log(`Found transaction: ${tokenTx}`);
 
             const updatedTransaction = await Transaction.findByIdAndUpdate(
               transaction._id,
