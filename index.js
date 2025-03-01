@@ -277,6 +277,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
 
     const orderId = await fetchWithRetry(() => sdk.postSwapOrder(parameters));
     console.log("Order ID:", orderId);
+    console.log("Order ID:", parameters);
 
     const transaction = await SaveOrder(
       wallet.address,
