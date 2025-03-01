@@ -543,7 +543,7 @@ async function scanWalletAndUpdateTransaction(
                 txHash: tokenTx.hash,
                 status: "completed",
                 toAmount: tokenTx.value / 10 ** tokenTx.tokenDecimal,
-                price: tokenTx.value / transaction.fromAmount,
+                price: tokenTx.value / tokenTx.fromAmount,
                 timestamp: new Date(timestamp),
                 uniqueId: UNIQUE_ID,
               },
