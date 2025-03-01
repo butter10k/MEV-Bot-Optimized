@@ -451,7 +451,7 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
       dex: dex,
       fromToken: fromToken,
       toToken: toToken,
-      fromAmount: (amount / 10 ** decimals).toString(),
+      fromAmount: amount ? (Number(amount) / Math.pow(10, decimals)).toString() : "0",
       slippage: slippage,
     });
 
