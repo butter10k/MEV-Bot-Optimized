@@ -156,15 +156,15 @@ app.post("/api/1inch/swap", async (req, res) => {
       console.log("Sufficient allowance already exists");
     }
 
-    const orderId = await fetchWithRetry(() => {
+    const orderId = await fetchWithRetry(() =>
       sdk.placeOrder({
         fromTokenAddress: TOKENS[chainId][fromToken],
         toTokenAddress: TOKENS[chainId][toToken],
         amount: amount.toString(),
         walletAddress: wallet.address,
         preset: gasPriority,
-      });
-    });
+      })
+    );
 
     console.log("Order ID:", orderId);
 
@@ -277,7 +277,6 @@ app.post("/api/cowswap/swap", async (req, res) => {
 
     const orderId = await fetchWithRetry(() => sdk.postSwapOrder(parameters));
     console.log("Order ID:", orderId);
-    console.log("Order ID:", parameters);
 
     const transaction = await SaveOrder(
       wallet.address,
@@ -287,7 +286,6 @@ app.post("/api/cowswap/swap", async (req, res) => {
         toToken,
         amount,
         slippage,
-        decimals,
       },
       "CowSwap"
     );
@@ -453,9 +451,7 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
       dex: dex,
       fromToken: fromToken,
       toToken: toToken,
-      fromAmount: amount
-        ? (Number(amount) / Math.pow(10, decimals)).toString()
-        : "0",
+      fromAmount: (amount / 10 ** decimals).toString(),
       slippage: slippage,
     });
 
@@ -541,19 +537,13 @@ async function scanWalletAndUpdateTransaction(
               "base64"
             );
 
-            const toAmount =
-              parseFloat(tokenTx.value) /
-              Math.pow(10, parseInt(tokenTx.tokenDecimal));
-            const price =
-              parseFloat(tokenTx.value) / parseFloat(transaction.fromAmount);
-
             const updatedTransaction = await Transaction.findByIdAndUpdate(
               transaction._id,
               {
                 txHash: tokenTx.hash,
                 status: "completed",
-                toAmount: toAmount || 0,
-                price: isNaN(price) ? 0 : price,
+                toAmount: tokenTx.value / 10 ** tokenTx.tokenDecimal,
+                price: tokenTx.value / transaction.fromAmount,
                 timestamp: new Date(timestamp),
                 uniqueId: UNIQUE_ID,
               },
@@ -589,8 +579,7 @@ async function scanWalletAndUpdateTransaction(
     return updatedTransaction;
   }
 }
-
 const port = process.env.PORT || 5000;
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
