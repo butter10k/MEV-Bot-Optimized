@@ -157,14 +157,13 @@ app.post("/api/1inch/swap", async (req, res) => {
     }
 
     const orderId = await fetchWithRetry(() => {
-      const response = sdk.placeOrder({
+      sdk.placeOrder({
         fromTokenAddress: TOKENS[chainId][fromToken],
         toTokenAddress: TOKENS[chainId][toToken],
         amount: amount.toString(),
         walletAddress: wallet.address,
         preset: gasPriority,
       });
-      console.log("response", response);
     });
 
     console.log("Order ID:", orderId);
