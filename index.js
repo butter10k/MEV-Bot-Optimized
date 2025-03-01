@@ -156,15 +156,16 @@ app.post("/api/1inch/swap", async (req, res) => {
       console.log("Sufficient allowance already exists");
     }
 
-    const orderId = await fetchWithRetry(() =>
-      sdk.placeOrder({
+    const orderId = await fetchWithRetry(() => {
+      const response = sdk.placeOrder({
         fromTokenAddress: TOKENS[chainId][fromToken],
         toTokenAddress: TOKENS[chainId][toToken],
         amount: amount.toString(),
         walletAddress: wallet.address,
         preset: gasPriority,
-      })
-    );
+      });
+      console.log("response", response);
+    });
 
     console.log("Order ID:", orderId);
 
