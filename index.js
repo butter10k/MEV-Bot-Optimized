@@ -228,9 +228,10 @@ app.post("/api/cowswap/swap", async (req, res) => {
   console.log(req.body);
 
   try {
-    const fromDecimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
-    const toDecimals = await getDecimals(chainId, TOKENS[chainId][toToken]);
-    amount = (amount * 10 ** fromDecimals) / 1e18;
+    const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
+    amount = (amount * 10 ** decimals) / 1e18;
+    console.log("Token decimals:", decimals);
+    console.log("Token amount:", amount);
 
     const rpc_url =
       chainId === 1
@@ -281,9 +282,9 @@ app.post("/api/cowswap/swap", async (req, res) => {
     const parameters = {
       kind: OrderKind.SELL,
       sellToken: TOKENS[chainId][fromToken],
-      sellTokenDecimals: toDecimals,
+      sellTokenDecimals: decimals,
       buyToken: TOKENS[chainId][toToken],
-      buyTokenDecimals: fromDecimals,
+      buyTokenDecimals: decimals,
       amount: amount.toString(),
       slippageBps: slippage * 100,
     };
