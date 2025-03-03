@@ -50,8 +50,24 @@
 			</div>
 		</div>
 	</div>
+
 	<!-- Dashboard Content -->
 	<div id="container" class="container dashboard">
+		<div id="priceSimulation" class="card config">
+			<h3>Price Simulation (Testing Mode)</h3>
+			<div class="simulation-controls">
+				<label class="switch">
+					<input id="simulationToggle" type="checkbox">
+					<span class="slider round"></span>
+					<span class="label">Enable Price Simulation</span>
+				</label>
+				<div id="simulationInputs" style="display: none; margin-top: 10px;">
+					<label for="simulatedPrice">Simulated ETH Price ($):</label>
+					<input type="number" id="simulatedPrice" placeholder="Enter price (e.g. 2450)" step="1">
+					<button id="applyPrice" class="apply-btn">Apply Price</button>
+				</div>
+			</div>
+		</div>
 		<div class="card config">
 			<h3>Bot Configuration</h3>
 			<div class="currentPrice">ETH Price: <span>-/-</span></div>
