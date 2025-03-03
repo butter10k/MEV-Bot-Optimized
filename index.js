@@ -85,7 +85,7 @@ app.post("/api/1inch/swap", async (req, res) => {
 
   try {
     const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
-    amount = (amount * 10 ** decimals) / 1e18;
+    amount = (amount * 10 ** decimals);
     console.log("request body", req.body);
 
     const rpc_url =
@@ -229,10 +229,9 @@ app.post("/api/cowswap/swap", async (req, res) => {
 
   try {
     const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
-    amount = (amount * 10 ** decimals) / 1e18;
+    amount = (amount * 10 ** decimals);
     console.log("Token decimals:", decimals);
     console.log("Token amount:", amount);
-
     const rpc_url =
       chainId === 1
         ? process.env.ETH_RPC_URL

@@ -121,10 +121,7 @@ class TradingBot {
         chainId: CHAINS[document.getElementById("chain").value],
         fromToken,
         toToken,
-        amount: web3.utils.toWei(
-          (this.currentAmount || this.initialAmount).toString(),
-          "ether"
-        ),
+        amount: (this.currentAmount || this.initialAmount).toString(),
         slippage: this.slippage,
         gasPriority: this.gasPriority,
       };
