@@ -9,14 +9,6 @@ import Web3 from "web3";
 import { Network, Alchemy } from "alchemy-sdk";
 import Transaction from "./models/transaction.js";
 import connectDB from "./utils/connectDB.js";
-import path from "path";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-import Bottleneck from "bottleneck";
-
-// Add these lines after your imports and before setting up Express
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function allowance(address owner, address spender) view returns (uint256)",
@@ -25,16 +17,7 @@ const ERC20_ABI = [
 
 const LIMIT_ORDER_CONTRACT = "0x111111125421cA6dc452d289314280a0f8842A65";
 const COWSWAP_CONTRACT = "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110";
-const MAX_RETRIES = 10;
 let UNIQUE_ID = "0x0000000000000000000000000000000000000000";
-
-const inchLimiter = new Bottleneck({
-  maxConcurrent: 1,
-  minTime: 1000,
-  highWater: 10,
-  strategy: Bottleneck.strategy.LEAK,
-  id: "1inch-api-limiter",
-});
 const TOKENS = {
   1: {
     WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -99,11 +82,12 @@ app.post("/api/1inch/swap", async (req, res) => {
     gasPriority,
     slippage = 1,
   } = req.body;
-  const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
-  amount = (amount * 10 ** decimals) / 1e18;
-  console.log("request body", req.body);
 
   try {
+    const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
+    amount = (amount * 10 ** decimals) / 1e18;
+    console.log("request body", req.body);
+
     const rpc_url =
       chainId === 1
         ? process.env.ETH_RPC_URL
@@ -136,9 +120,7 @@ app.post("/api/1inch/swap", async (req, res) => {
       authKey: process.env.INCH_API_KEY,
     });
 
-    await inchLimiter.schedule(
-      () => new Promise((resolve) => setTimeout(resolve, 2000))
-    );
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const currentAllowance = await tokenContract.allowance(
       wallet.address,
@@ -164,21 +146,18 @@ app.post("/api/1inch/swap", async (req, res) => {
       console.log("Sufficient allowance already exists");
     }
 
-    const orderId = await inchLimiter.schedule(() =>
-      fetchWithRetry(() =>
-        sdk.placeOrder({
-          fromTokenAddress: TOKENS[chainId][fromToken],
-          toTokenAddress: TOKENS[chainId][toToken],
-          amount: amount.toString(),
-          walletAddress: wallet.address,
-          preset: gasPriority,
-        })
-      )
+    const orderId = await executeWithRetry(() =>
+      sdk.placeOrder({
+        fromTokenAddress: TOKENS[chainId][fromToken],
+        toTokenAddress: TOKENS[chainId][toToken],
+        amount: amount.toString(),
+        walletAddress: wallet.address,
+        preset: gasPriority,
+      })
     );
 
     console.log("Order ID:", orderId);
 
-    // Save transaction to database
     const transaction = await SaveOrder(
       wallet.address,
       {
@@ -206,7 +185,24 @@ app.post("/api/1inch/swap", async (req, res) => {
     });
   } catch (error) {
     console.error("Fill order error:", error);
-    res.status(500).json({ error: error.message });
+
+    let errorMessage = error.message || "Unknown error";
+    let errorCode = "SWAP_FAILED";
+
+    if (error.response && error.response.data) {
+      if (error.response.data.description === "NotEnoughBalanceOrAllowance") {
+        errorMessage = "Insufficient balance or allowance for this swap";
+        errorCode = "INSUFFICIENT_BALANCE";
+      } else if (error.response.data.description) {
+        errorMessage = error.response.data.description;
+      }
+    }
+
+    res.status(400).json({
+      success: false,
+      error: errorMessage,
+      errorCode: errorCode,
+    });
   }
 });
 
@@ -227,10 +223,11 @@ app.post("/api/1inch/swap", async (req, res) => {
  */
 app.post("/api/cowswap/swap", async (req, res) => {
   let { chainId, fromToken, toToken, amount, slippage = 1 } = req.body;
-  const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
-  amount = (amount * 10 ** decimals) / 1e18;
 
   try {
+    const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
+    amount = (amount * 10 ** decimals) / 1e18;
+
     const rpc_url =
       chainId === 1
         ? process.env.ETH_RPC_URL
@@ -285,7 +282,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
       slippageBps: slippage * 100,
     };
 
-    const orderId = await fetchWithRetry(() => sdk.postSwapOrder(parameters));
+    const orderId = await executeWithRetry(() => sdk.postSwapOrder(parameters));
     console.log("Order ID:", orderId);
 
     const transaction = await SaveOrder(
@@ -314,7 +311,16 @@ app.post("/api/cowswap/swap", async (req, res) => {
     });
   } catch (error) {
     console.error("Fill order error:", error);
-    res.status(500).json({ error: error.message });
+
+    let errorMessage = error.message || "Unknown error";
+
+    if (error.response && error.response.data) {
+      if (error.response.data.description) {
+        errorMessage = error.response.data.description;
+      }
+    }
+
+    res.status(400).json({ success: false, error: errorMessage });
   }
 });
 
@@ -395,48 +401,45 @@ const getDecimals = async (chainId, tokenAddress) => {
 };
 
 /**
- * Handles the API endpoint for swapping tokens using the 1inch API.
+ * Executes a function with retry capability, but quits immediately on 400 errors
  *
- * @param {Object} req - The HTTP request object.
- * @param {number} req.body.chainId - The ID of the blockchain network.
- * @param {string} req.body.fromToken - The address of the token to be swapped from.
- * @param {string} req.body.toToken - The address of the token to be swapped to.
- * @param {number} req.body.amount - The amount of the `fromToken` to be swapped.
- * @param {Object} res - The HTTP response object.
- * @returns {Promise<void>} - A Promise that resolves when the response is sent.
+ * @param {Function} requestFunction - The function to execute and potentially retry
+ * @param {number} maxRetries - Maximum number of retry attempts
+ * @param {number} baseDelay - Base delay between retries in ms
+ * @returns {Promise<any>} - Result of the function call
  */
-const fetchWithRetry = async (fetchFunction, retries = MAX_RETRIES) => {
-  for (let attempt = 0; attempt < retries; attempt++) {
+const executeWithRetry = async (
+  requestFunction,
+  maxRetries = 3,
+  baseDelay = 1000
+) => {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      return await fetchFunction();
+      return await requestFunction();
     } catch (error) {
-      if (error.response && error.response.status === 429) {
-        // Exponential backoff with jitter to prevent all clients retrying simultaneously
-        const baseWaitTime = Math.pow(2, attempt) * 1000; // Exponential base time
-        const jitter = Math.random() * 1000; // Random jitter up to 1 second
-        const waitTime = baseWaitTime + jitter;
-
-        console.log(
-          `Attempt ${
-            attempt + 1
-          } failed with 429 (Rate limit exceeded). Retrying in ${waitTime.toFixed(
-            0
-          )} ms...`
+      if (error.response && error.response.status == 400) {
+        console.error(
+          `Client error (${error.response.status}), not retrying:`,
+          error.response?.data || error.message
         );
-
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-      } else {
-        console.error("Error:", error);
-        // For non-rate-limit errors, still wait before retrying but less aggressively
-        if (attempt < retries - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } else {
-          throw error; // Re-throw on last attempt
-        }
+        throw error;
       }
+
+      const isLastAttempt = attempt === maxRetries - 1;
+      if (isLastAttempt) {
+        console.error(`Final attempt ${attempt + 1} failed:`, error);
+        throw error;
+      }
+
+      const jitter = Math.random() * 500;
+      const delay = Math.pow(2, attempt) * baseDelay + jitter;
+
+      console.log(
+        `Attempt ${attempt + 1} failed, retrying in ${Math.round(delay)}ms`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  throw new Error("Max retries reached");
 };
 
 /**

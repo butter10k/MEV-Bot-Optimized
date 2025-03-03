@@ -108,85 +108,70 @@ class TradingBot {
   }
 
   async executeSwap(fromToken, toToken, swapService) {
-    console.log(`Executing swap: ${fromToken} → ${toToken}`);
-    const maxRetries = 3;
-    let retries = 0;
-
-    while (retries < maxRetries) {
-      try {
-        const txData = {
-          chainId: CHAINS[document.getElementById("chain").value],
-          fromToken,
-          toToken,
-          amount: web3.utils.toWei(
-            (this.currentAmount || this.initialAmount).toString(),
-            "ether"
-          ),
-          slippage: this.slippage,
-          gasPriority: this.gasPriority,
-        };
-
-        let apiUrl;
-        if (swapService === "1inch") {
-          apiUrl = "/api/1inch/swap";
-        } else if (swapService === "cowswap") {
-          apiUrl = "/api/cowswap/swap";
-        } else {
-          throw new Error("Invalid swap service selected");
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1000000);
-
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(txData),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          toastr.success(`Trade executed successfully`);
-          addToLog(
-            `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
-          );
-          return true;
-        } else if (response.status === 500) {
-          toastr.error(`Not enough balance for swapping.`);
-          return false;
-        } else {
-          throw new Error("Swapping failed");
-        }
-      } catch (error) {
-        retries++;
-        const isTimeout = error.name === "AbortError";
-
-        if (retries >= maxRetries) {
-          toastr.error(
-            `Trade failed after ${maxRetries}`
-          );
-          addToLog(`Failed swap: ${fromToken} → ${toToken}`);
-          return false;
-        }
-
-        const waitTime = isTimeout ? 2000 : 5000 * retries;
-        toastr.warning(`Swap attempt ${retries}/${maxRetries} failed. `);
-
-        // Wait before retrying
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-        console.log(
-          `Retrying swap: ${fromToken} → ${toToken} (Attempt ${
-            retries + 1
-          }/${maxRetries})`
-        );
-      }
+    if (this.isSwapping) {
+      console.warn("Swap already in progress. Skipping new swap request.");
+      return false;
     }
 
-    return false;
+    this.isSwapping = true;
+    console.log(`Executing swap: ${fromToken} → ${toToken}`);
+
+    try {
+      const txData = {
+        chainId: CHAINS[document.getElementById("chain").value],
+        fromToken,
+        toToken,
+        amount: web3.utils.toWei(
+          (this.currentAmount || this.initialAmount).toString(),
+          "ether"
+        ),
+        slippage: this.slippage,
+        gasPriority: this.gasPriority,
+      };
+
+      let apiUrl;
+      if (swapService === "1inch") {
+        apiUrl = "/api/1inch/swap";
+      } else if (swapService === "cowswap") {
+        apiUrl = "/api/cowswap/swap";
+      } else {
+        throw new Error("Invalid swap service selected");
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1000000);
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(txData),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toastr.success(`Trade executed successfully`);
+        addToLog(
+          `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
+        );
+        return true;
+      } else {
+        throw new Error(data.error || "Failed to execute swap");
+      }
+    } catch (error) {
+      console.error("Swap execution failed:", error);
+      if (error.message.includes("insufficient funds")) {
+        toastr.error("Insufficient funds");
+      } else {
+        toastr.error("Swap failed");
+      }
+      return false;
+    } finally {
+      this.isSwapping = false;
+    }
   }
 }
 
