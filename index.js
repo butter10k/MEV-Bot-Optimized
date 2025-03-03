@@ -293,6 +293,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
         toToken,
         amount,
         slippage,
+        decimals,
       },
       "CowSwap"
     );
