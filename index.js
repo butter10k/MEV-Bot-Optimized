@@ -281,9 +281,9 @@ app.post("/api/cowswap/swap", async (req, res) => {
     const parameters = {
       kind: OrderKind.SELL,
       sellToken: TOKENS[chainId][fromToken],
-      sellTokenDecimals: fromDecimals,
+      sellTokenDecimals: toDecimals,
       buyToken: TOKENS[chainId][toToken],
-      buyTokenDecimals: toDecimals,
+      buyTokenDecimals: fromDecimals,
       amount: amount.toString(),
       slippageBps: slippage * 100,
     };
