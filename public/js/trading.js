@@ -162,12 +162,8 @@ class TradingBot {
         throw new Error(data.error || "Failed to execute swap");
       }
     } catch (error) {
-      console.error("Swap execution failed:", error);
-      if (error.message.includes("insufficient funds")) {
-        toastr.error("Insufficient funds");
-      } else {
-        toastr.error("Swap failed");
-      }
+      console.error("Swap execution failed");
+      toastr.error("Insufficient funds or network error");
       return false;
     } finally {
       this.isSwapping = false;
