@@ -411,8 +411,8 @@ const getDecimals = async (chainId, tokenAddress) => {
  */
 const executeWithRetry = async (
   requestFunction,
-  maxRetries = 10,
-  baseDelay = 1000
+  maxRetries = 5,
+  baseDelay = 3000
 ) => {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
