@@ -536,9 +536,6 @@ async function scanWalletAndUpdateTransaction(
       ? process.env.BASESCAN_API_KEY
       : process.env.ETHERSCAN_API_KEY;
 
-  const fromTokenAddress = TOKENS[chainId][transaction.fromToken];
-  const toTokenAddress = TOKENS[chainId][transaction.toToken];
-
   let found = false;
   let attempts = 0;
   const maxAttempts = 10;
@@ -553,7 +550,7 @@ async function scanWalletAndUpdateTransaction(
         const tokenTx = response.data.result[0];
         const timestamp = parseInt(tokenTx.timeStamp) * 1000;
 
-        const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+        const tenMinutesAgo = Date.now() - 5 * 60 * 1000;
 
         if (timestamp > tenMinutesAgo) {
           if (tokenTx.to.toLowerCase() === walletAddress.toLowerCase()) {
