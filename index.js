@@ -556,11 +556,7 @@ async function scanWalletAndUpdateTransaction(
         const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
 
         if (timestamp > tenMinutesAgo) {
-          if (
-            tokenTx.contractAddress.toLowerCase() ===
-              toTokenAddress.toLowerCase() &&
-            tokenTx.from.toLowerCase() === walletAddress.toLowerCase()
-          ) {
+          if (tokenTx.to.toLowerCase() === walletAddress.toLowerCase()) {
             UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString(
               "base64"
             );
