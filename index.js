@@ -575,7 +575,7 @@ async function scanWalletAndUpdateTransaction(
               status: "completed",
               timestamp: new Date(timestamp),
               uniqueId: UNIQUE_ID,
-              [tokenTx.tokenSymbol.toLowerCase() === "weth" ? "fromAmount" : "toAmount"]:
+              [tokenTx.tokenSymbol.toLowerCase() === "weth" ? "toAmount" : "fromAmount"]:
                 tokenTx.value / 10 ** tokenTx.tokenDecimal,
             };
 
