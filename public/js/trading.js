@@ -324,6 +324,12 @@ async function loadLogs() {
   }
 }
 
+function checkSimulatedPrice() {
+  if (window.isSimulationMode && window.simulatedPrice !== undefined) {
+    return window.simulatedPrice;
+  }
+  return null;
+}
 document.addEventListener("DOMContentLoaded", () => {
   loadLogs();
 });

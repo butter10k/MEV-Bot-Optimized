@@ -5,12 +5,27 @@ const CHAINS = {
   base: 8453,
 };
 
+let isSimulationMode = false;
+let simulatedPrice = null;
 let currentPrice = 0;
 let stopLossThreshold = 0;
 let isTrading = false;
 let initialETHAmount = 0;
-let isSimulationMode = false; // Add this flag
+window.isSimulationMode = isSimulationMode;
+window.simulatedPrice = simulatedPrice;
 
+function setSimulatedPrice(price) {
+  currentPrice = parseFloat(price);
+  window.simulatedPrice = currentPrice;
+
+  document.querySelector(
+    ".currentPrice span"
+  ).textContent = `${currentPrice.toFixed(2)} (Simulated)`;
+
+  addLogMessage(`Simulated ETH price set to $${currentPrice.toFixed(2)}`);
+
+  return currentPrice;
+}
 async function getETHPrice() {
   try {
     // If simulation mode is enabled, use the simulated price
@@ -55,19 +70,6 @@ function updateStablecoinOptions() {
   }
 }
 
-// Function to handle price simulation
-function setSimulatedPrice(price) {
-  currentPrice = parseFloat(price);
-  document.querySelector(
-    ".currentPrice span"
-  ).textContent = `${currentPrice.toFixed(2)} (Simulated)`;
-
-  // Log the price change for testing
-  addLogMessage(`Simulated ETH price set to $${currentPrice.toFixed(2)}`);
-
-  return currentPrice;
-}
-
 // Add event listeners
 document
   .getElementById("chain")
@@ -86,12 +88,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   simulationToggle.addEventListener("change", function () {
     isSimulationMode = this.checked;
+    window.isSimulationMode = isSimulationMode; 
     simulationInputs.style.display = this.checked ? "block" : "none";
 
     if (this.checked) {
       addLogMessage("Price simulation mode enabled");
 
-      // If a price is already entered, apply it immediately
       if (simulatedPrice.value) {
         setSimulatedPrice(simulatedPrice.value);
       }
@@ -99,7 +101,8 @@ document.addEventListener("DOMContentLoaded", () => {
       addLogMessage(
         "Price simulation mode disabled, returning to real-time prices"
       );
-      getETHPrice(); // Return to real price
+      window.simulatedPrice = null; 
+      getETHPrice();
     }
   });
 

@@ -224,6 +224,9 @@ app.post("/api/1inch/swap", async (req, res) => {
 app.post("/api/cowswap/swap", async (req, res) => {
   let { chainId, fromToken, toToken, amount, slippage = 1 } = req.body;
 
+  console.log("Received request to swap tokens using CowSwap");
+  console.log(req.body);
+
   try {
     const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
     amount = (amount * 10 ** decimals) / 1e18;
