@@ -259,7 +259,9 @@ app.post("/api/cowswap/swap", async (req, res) => {
       COWSWAP_CONTRACT
     );
 
-    if (currentAllowance.lt(ethers.BigNumber.from(amount.toString()))) {
+    if (
+      currentAllowance.lt(ethers.BigNumber.from(Math.floor(amount).toString()))
+    ) {
       try {
         const approveTx = await tokenContract.approve(
           COWSWAP_CONTRACT,
