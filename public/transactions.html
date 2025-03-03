@@ -136,9 +136,7 @@
 					const item = document.createElement('div');
 					item.className = 'transaction-item';
 
-					const type = tx.fromToken === 'ETH' ? 'Sell' : 'Buy';
-					const amount = type === 'Sell' ? tx.fromAmount : tx.toAmount;
-					const token = type === 'Sell' ? tx.fromToken : tx.toToken;
+					const type = tx.fromToken === 'WETH' ? 'Sell' : 'Buy';
 
 					item.innerHTML = `
 						<div>
@@ -150,7 +148,7 @@
 						</div>
 						<div>${new Date(tx.timestamp).toLocaleString('en-US', { timeZone: 'UTC' })}</div>
 						<div>
-						<b>${type}</b> ${formatAmount(amount)} ${token} at ${tx.price}
+						${formatAmount(tx.fromAmount)} ${tx.fromToken} at ${tx.toAmount} ${tx.toToken}
 						</div>
 						<div class="status status-${type.toLowerCase()}">
 						${type}

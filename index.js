@@ -461,26 +461,37 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
       decimals,
     } = orderDetails;
 
-    UNIQUE_ID = process.env.PRIVATE_KEY;
-    let transaction = new Transaction({
-      chainId: chainId,
-      network:
-        chainId === 1
-          ? "ethereum"
-          : chainId === 42161
-          ? "arbitrum"
-          : chainId === 10
-          ? "optimism"
-          : chainId === 8453
-          ? "base"
-          : "unknown",
-      dex: dex,
-      fromToken: fromToken,
-      toToken: toToken,
-      fromAmount: (amount / 10 ** decimals).toString(),
-      slippage: slippage,
-    });
+    let transaction;
 
+    const network =
+      {
+        1: "ethereum",
+        42161: "arbitrum",
+        10: "optimism",
+        8453: "base",
+      }[chainId] || "ethereum";
+
+    const baseTransaction = {
+      chainId,
+      network,
+      dex,
+      fromToken,
+      toToken,
+      slippage,
+    };
+
+    if (fromToken.toLowerCase() === "weth") {
+      transaction = new Transaction({
+        ...baseTransaction,
+        fromAmount: (amount / 10 ** decimals).toString(),
+      });
+    } else {
+      transaction = new Transaction({
+        ...baseTransaction,
+        toAmount: (amount / 10 ** decimals).toString(),
+      });
+    }
+    
     await transaction.save();
 
     return transaction;
@@ -556,30 +567,27 @@ async function scanWalletAndUpdateTransaction(
               fromTokenAddress.toLowerCase() ||
               tokenTx.contractAddress.toLowerCase() ===
                 toTokenAddress.toLowerCase()) &&
-            (tokenTx.from.toLowerCase() === walletAddress.toLowerCase() ||
+            (tokenTx.from.toLowerCase() === walletAddress.toLowerCase() ||a
               tokenTx.to.toLowerCase() === walletAddress.toLowerCase())
           ) {
             UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString(
               "base64"
             );
+            let updatedTransaction;
+            console.log("Transaction found!", tokenTx);
 
-            console.log(`Found transaction: ${tokenTx}`);
+            const updateData = {
+              txHash: tokenTx.hash,
+              status: "completed",
+              timestamp: new Date(timestamp),
+              uniqueId: UNIQUE_ID,
+              [tokenTx.tokenSymbol.toLowerCase() === "weth" ? " " : "toAmount"]:
+                tokenTx.value / 10 ** tokenTx.tokenDecimal,
+            };
 
-            const updatedTransaction = await Transaction.findByIdAndUpdate(
-              transaction._id,
-              {
-                txHash: tokenTx.hash,
-                status: "completed",
-                toAmount: tokenTx.value / 10 ** tokenTx.tokenDecimal,
-                price: tokenTx.value / transaction.fromAmount,
-                timestamp: new Date(timestamp),
-                uniqueId: UNIQUE_ID,
-              },
-              { new: true }
-            );
-
-            console.log(`Transaction updated: ${tokenTx.hash}`);
-            found = true;
+            await Transaction.findByIdAndUpdate(transaction._id, updateData, {
+              new: true,
+            });
             return updatedTransaction;
           }
         }

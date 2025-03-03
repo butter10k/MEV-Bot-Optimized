@@ -35,10 +35,6 @@ const TransactionSchema = new mongoose.Schema({
     default: "0",
   },
 
-  price: {
-    type: Number,
-  },
-
   txHash: {
     type: String,
     default: "",
