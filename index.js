@@ -481,17 +481,10 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
       slippage,
     };
 
-    if (fromToken.toLowerCase() === "weth") {
-      transaction = new Transaction({
-        ...baseTransaction,
-        fromAmount: (amount / 10 ** decimals).toString(),
-      });
-    } else {
-      transaction = new Transaction({
-        ...baseTransaction,
-        toAmount: (amount / 10 ** decimals).toString(),
-      });
-    }
+    transaction = new Transaction({
+      ...baseTransaction,
+      fromAmount: (amount / 10 ** decimals).toString(),
+    });
 
     await transaction.save();
 
@@ -582,7 +575,7 @@ async function scanWalletAndUpdateTransaction(
               status: "completed",
               timestamp: new Date(timestamp),
               uniqueId: UNIQUE_ID,
-              [tokenTx.tokenSymbol.toLowerCase() === "weth" ? " " : "toAmount"]:
+              [tokenTx.tokenSymbol.toLowerCase() === "weth" ? "fromAmount" : "toAmount"]:
                 tokenTx.value / 10 ** tokenTx.tokenDecimal,
             };
 
