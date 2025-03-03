@@ -491,7 +491,7 @@ async function SaveOrder(userAddresss, orderDetails, dex) {
         toAmount: (amount / 10 ** decimals).toString(),
       });
     }
-    
+
     await transaction.save();
 
     return transaction;
@@ -567,7 +567,7 @@ async function scanWalletAndUpdateTransaction(
               fromTokenAddress.toLowerCase() ||
               tokenTx.contractAddress.toLowerCase() ===
                 toTokenAddress.toLowerCase()) &&
-            (tokenTx.from.toLowerCase() === walletAddress.toLowerCase() ||a
+            (tokenTx.from.toLowerCase() === walletAddress.toLowerCase() ||
               tokenTx.to.toLowerCase() === walletAddress.toLowerCase())
           ) {
             UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString(
