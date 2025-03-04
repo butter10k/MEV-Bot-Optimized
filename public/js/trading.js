@@ -115,50 +115,50 @@ class TradingBot {
     this.isSwapping = true;
     console.log(`Executing swap: ${fromToken} → ${toToken}`);
 
-    try {
-      const txData = {
-        chainId: CHAINS[document.getElementById("chain").value],
-        fromToken,
-        toToken,
-        amount: (this.currentAmount || this.initialAmount).toString(),
-        slippage: this.slippage,
-        gasPriority: this.gasPriority,
-      };
+    const txData = {
+      chainId: CHAINS[document.getElementById("chain").value],
+      fromToken,
+      toToken,
+      amount: (this.currentAmount || this.initialAmount).toString(),
+      slippage: this.slippage,
+      gasPriority: this.gasPriority,
+    };
 
-      let apiUrl;
-      if (swapService === "1inch") {
-        apiUrl = "/api/1inch/swap";
-      } else if (swapService === "cowswap") {
-        apiUrl = "/api/cowswap/swap";
-      } else {
-        throw new Error("Invalid swap service selected");
-      }
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1000000);
-
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(txData),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      const data = await response.json();
-      toastr.success(`Trade executed successfully`);
-      this.currentAmount = parseFloat(data.updateTransaction.toAmount);
-      addToLog(
-        `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
-      );
-      return true;
-    } catch (error) {
-      toastr.error("Insufficient funds or network error");
-      return false;
-    } finally {
-      this.isSwapping = false;
+    let apiUrl;
+    if (swapService === "1inch") {
+      apiUrl = "/api/1inch/swap";
+    } else if (swapService === "cowswap") {
+      apiUrl = "/api/cowswap/swap";
+    } else {
+      throw new Error("Invalid swap service selected");
     }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1000000);
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(txData),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      toastr.error("Error executing trade");
+      this.isSwapping = false;
+      clearTimeout(timeoutId);
+      return false;
+    }
+    clearTimeout(timeoutId);
+
+    const data = await response.json();
+    toastr.success(`Trade executed successfully`);
+    this.currentAmount = parseFloat(data.updateTransaction.toAmount);
+    addToLog(
+      `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
+    );
+    this.isSwapping = false;
+    return true;
   }
 }
 

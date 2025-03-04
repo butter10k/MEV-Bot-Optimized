@@ -312,7 +312,6 @@ app.post("/api/cowswap/swap", async (req, res) => {
       "CowSwap"
     ).catch((error) => console.error("Error scanning wallet:", error));
 
-
     res.json({
       success: true,
       orderId: orderId,
@@ -604,7 +603,6 @@ async function scanWalletAndUpdateTransaction(
     `Monitoring wallet ${walletAddress} for transaction on chain ${chainId}...`
   );
 
-  // Set up the appropriate scan API based on chain ID
   const apiUrl =
     chainId === 1
       ? "https://api.etherscan.io/api"
@@ -683,15 +681,16 @@ async function scanWalletAndUpdateTransaction(
   }
 
   if (!found) {
-    const updatedTransaction = await Transaction.findByIdAndUpdate(
+    await Transaction.findByIdAndUpdate(
       transaction._id,
       { status: "pending" },
       { new: true }
     );
     console.log(`No matching transaction found after ${maxAttempts} attempts`);
-    return updatedTransaction;
+    return false;
   }
 }
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
