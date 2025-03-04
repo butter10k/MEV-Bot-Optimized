@@ -171,7 +171,7 @@ app.post("/api/1inch/swap", async (req, res) => {
       "1inch"
     );
 
-    scanWalletAndUpdateTransaction(
+    await scanWalletAndUpdateTransaction(
       wallet.address,
       transaction,
       chainId,
@@ -304,7 +304,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
       "CowSwap"
     );
 
-    scanWalletAndUpdateTransaction(
+    await scanWalletAndUpdateTransaction(
       wallet.address,
       transaction,
       chainId,

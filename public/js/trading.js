@@ -16,7 +16,7 @@ class TradingBot {
     this.currentAmount = 0;
     this.selectedStablecoin = "";
     this.buffer = 0.5;
-    this.cooldown = 30;
+    this.cooldown = 5;
     this.gasPriority = "normal";
     this.isUSDMode = false;
   }
@@ -297,10 +297,8 @@ async function loadLogs() {
   const logs = JSON.parse(localStorage.getItem("logs")) || [];
   const logContainer = document.getElementById("log");
 
-  // Check if the log container exists before trying to use it
   if (!logContainer) {
-    // console.error("Log container element with ID 'log' not found in the document");
-    return; // Exit the function if the container doesn't exist
+    return;
   }
 
   logs.reverse();
@@ -321,6 +319,7 @@ function checkSimulatedPrice() {
   }
   return null;
 }
+
 document.addEventListener("DOMContentLoaded", () => {
   loadLogs();
 });
