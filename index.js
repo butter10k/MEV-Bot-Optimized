@@ -85,7 +85,7 @@ app.post("/api/1inch/swap", async (req, res) => {
 
   try {
     const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
-    amount = (amount * 10 ** decimals);
+    amount = amount * 10 ** decimals;
     console.log("request body", req.body);
 
     const rpc_url =
@@ -229,7 +229,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
 
   try {
     const decimals = await getDecimals(chainId, TOKENS[chainId][fromToken]);
-    amount = (amount * 10 ** decimals);
+    amount = amount * 10 ** decimals;
     console.log("Token decimals:", decimals);
     console.log("Token amount:", amount);
     const rpc_url =
@@ -374,6 +374,52 @@ app.get("/api/transactions/latest", async (req, res) => {
 });
 
 /**
+ * Retrieves the balance of a token for a specific address on a specific chain.
+ *
+ * @param {Object} req - The HTTP request object with query parameters: chain, token, address.
+ * @param {Object} res - The HTTP response object.
+ * @returns {Promise<void>} - A Promise that resolves when the response is sent.
+ */
+app.get("/api/wallet/balance", async (req, res) => {
+  try {
+    const { chain, token } = req.query;
+
+    console.log("chain:", chain);
+    console.log("token:", token);
+    if (!chain || !token) {
+      return res.status(400).json({ error: "Missing required parameters" });
+    }
+
+    const rpc_url =
+      chain == 1
+        ? process.env.ETH_RPC_URL
+        : chain == 10
+        ? process.env.OPTIMISM_RPC_URL
+        : chain == 8453
+        ? process.env.BASE_RPC_URL
+        : chain == 42161
+        ? process.env.ARBITRUM_RPC_URL
+        : process.env.ETH_RPC_URL;
+    const provider = new ethers.providers.JsonRpcProvider(rpc_url);
+    const tokenContract = new Contract(
+      token,
+      ["function balanceOf(address owner) view returns (uint256)"],
+      provider
+    );
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    const decimals = await getDecimals(chain, token);
+    const balanceWei = await tokenContract.balanceOf(wallet.address);
+    const balance = balanceWei / 10 ** decimals;
+    console.log("balance:", balance);
+
+    return res.json({ balance });
+  } catch (error) {
+    console.error("Error fetching token balance:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * Retrieves the number of decimal places for a given token on a specific blockchain.
  *
  * @param {number} chainId - The ID of the blockchain network.
@@ -381,6 +427,26 @@ app.get("/api/transactions/latest", async (req, res) => {
  * @returns {Promise<number>} - The number of decimal places for the token.
  */
 const getDecimals = async (chainId, tokenAddress) => {
+  const knownTokenDecimals = {
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": 18, // Ethereum
+    "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1": 18, // Arbitrum
+    "0x4200000000000000000000000000000000000006": 18, // Optimism, Base
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7": 6, // USDT on Ethereum
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": 6, // USDC on Ethereum
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F": 18, // DAI on Ethereum
+    "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9": 6, // USDT on Arbitrum
+    "0xaf88d065e77c8cC2239327C5EDb3A432268e5831": 6, // USDC on Arbitrum
+    "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1": 18, // DAI on Arbitrum/Optimism
+    "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58": 6, // USDT on Optimism
+    "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85": 6, // USDC on Optimism
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913": 6, // USDC on Base
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb": 18, // DAI on Base
+  };
+
+  if (knownTokenDecimals[tokenAddress]) {
+    return knownTokenDecimals[tokenAddress];
+  }
+
   try {
     const rpc_url =
       chainId === 1
@@ -394,13 +460,29 @@ const getDecimals = async (chainId, tokenAddress) => {
         : process.env.ETH_RPC_URL;
 
     const provider = new ethers.providers.JsonRpcProvider(rpc_url);
+
     const tokenContract = new Contract(
       tokenAddress,
-      ["function decimals() view returns (uint8)"],
+      [
+        "function decimals() view returns (uint8)",
+        "function DECIMALS() view returns (uint8)",
+        "function Decimals() view returns (uint8)",
+        "function getDecimals() view returns (uint8)",
+      ],
       provider
     );
-    const decimals = await tokenContract.decimals();
-    return decimals;
+
+    try {
+      const decimals = await tokenContract.decimals();
+      return decimals;
+    } catch (err) {
+      try {
+        const decimals = await tokenContract.DECIMALS();
+        return decimals;
+      } catch (err2) {
+        return 18;
+      }
+    }
   } catch (error) {
     console.error("Error getting decimals:", error);
     return 18;

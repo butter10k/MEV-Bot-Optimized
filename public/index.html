@@ -40,10 +40,8 @@
 				</select>
 				<img src="/dropdown.png">
 			</div>
-			<!-- Connect Wallet Button - Visible by default -->
-			<button id="connectButton" class="connect-button" onclick="connectWallet()">Connect Wallet</button>
 			<!-- Wallet Info - Hidden by default -->
-			<div id="walletInfo" class="wallet-info" style="display: none;">
+			<div id="walletInfo" class="wallet-info">
 				<img src="/wallet.png">
 				<span id="walletBalance">0.0000 WETH</span>
 				<span id="walletAddress">0x00...000</span>
@@ -75,8 +73,8 @@
 
 			<label for="dexAggregator">DEX Aggregator:</label>
 			<select id="dexAggregator" class="dex-select">
-				<option value="1inch">1inch</option>
 				<option value="cowswap">CowSwap</option>
+				<option value="1inch">1inch</option>
 			</select>
 			<div id="initialAmount">
 				<label for="initialETH">Initial Amount to Stop-Loss:</label>

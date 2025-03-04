@@ -1,4 +1,3 @@
-const web3 = new Web3(window.ethereum);
 toastr.options = {
   closeButton: true,
   progressBar: false,
@@ -17,7 +16,7 @@ class TradingBot {
     this.currentAmount = 0;
     this.selectedStablecoin = "";
     this.buffer = 0.5;
-    this.cooldown = 5;
+    this.cooldown = 30;
     this.gasPriority = "normal";
     this.isUSDMode = false;
   }
@@ -185,11 +184,6 @@ let tradingBot = null;
  * @param {boolean} [config.isUSDMode] - Whether the bot should operate in USD mode, defaulting to false.
  */
 function startBot() {
-  if (!window.ethereum || !window.ethereum.selectedAddress) {
-    alert("Please connect wallet first");
-    return;
-  }
-
   const config = {
     stopLossPrice: document.getElementById("stopLoss").value,
     initialAmount: document.getElementById("initialETH").value,
