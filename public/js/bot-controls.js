@@ -18,7 +18,6 @@ function startBot() {
     return;
   }
 
-  // Update UI to show bot is running
   document.getElementById("startBot").style.display = "none";
   document.getElementById("stopBot").style.display = "block";
   document.getElementById("statusIndicator").className =
@@ -38,7 +37,6 @@ function startBot() {
     isUSDMode: window.isUSDMode,
   });
 
-  // Restore simulation mode if it was enabled
   if (wasSimulationEnabled) {
     document.getElementById("simulationToggle").checked = true;
     window.isSimulationMode = true;
@@ -51,7 +49,7 @@ function startBot() {
   }
 }
 
-function stopBot() {
+async function stopBot() {
   bot.stop();
 
   document.getElementById("startBot").style.display = "block";
@@ -60,5 +58,19 @@ function stopBot() {
     "status-indicator paused";
   document.getElementById("statusText").textContent = "Bot Paused";
 
+  try {
+    const response = await fetch("/api/transactions/clear", {
+      method: "DELETE",
+    });
+    const data = await response.json();
+    if (data.success) {
+      toastr.success(data.message); // Show success message
+    } else {
+      toastr.error("Failed to clear transactions: " + data.error);
+    }
+  } catch (error) {
+    console.error("Error clearing transactions:", error);
+    toastr.error("Error clearing transactions: " + error.message);
+  }
   addLogMessage("Bot stopped");
 }

@@ -690,6 +690,16 @@ async function scanWalletAndUpdateTransaction(
   }
 }
 
+app.delete("/api/transactions/clear", async (req, res) => {
+  try {
+    await Transaction.deleteMany();
+    res.json({ success: true, message: "All transactions have been cleared." });
+  } catch (error) {
+    console.error("Error clearing transactions:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
