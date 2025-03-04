@@ -171,7 +171,7 @@ app.post("/api/1inch/swap", async (req, res) => {
       "1inch"
     );
 
-    await scanWalletAndUpdateTransaction(
+    const updateTransaction = await scanWalletAndUpdateTransaction(
       wallet.address,
       transaction,
       chainId,
@@ -182,6 +182,7 @@ app.post("/api/1inch/swap", async (req, res) => {
       success: true,
       orderId: orderId,
       transactionId: transaction._id,
+      updateTransaction: updateTransaction,
     });
   } catch (error) {
     console.error("Fill order error:", error);
@@ -304,17 +305,19 @@ app.post("/api/cowswap/swap", async (req, res) => {
       "CowSwap"
     );
 
-    await scanWalletAndUpdateTransaction(
+    const updateTransaction = await scanWalletAndUpdateTransaction(
       wallet.address,
       transaction,
       chainId,
       "CowSwap"
     ).catch((error) => console.error("Error scanning wallet:", error));
 
+
     res.json({
       success: true,
       orderId: orderId,
       transactionId: transaction._id,
+      updateTransaction: updateTransaction,
     });
   } catch (error) {
     console.error("Fill order error:", error);
@@ -649,7 +652,6 @@ async function scanWalletAndUpdateTransaction(
             UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString(
               "base64"
             );
-            let updatedTransaction;
             console.log("Transaction found!", tokenTx);
 
             const updateData = {
@@ -663,7 +665,7 @@ async function scanWalletAndUpdateTransaction(
             await Transaction.findByIdAndUpdate(transaction._id, updateData, {
               new: true,
             });
-            return updatedTransaction;
+            return updateData;
           }
         }
       }

@@ -147,18 +147,13 @@ class TradingBot {
       clearTimeout(timeoutId);
 
       const data = await response.json();
-
-      if (response.ok && data.success) {
-        toastr.success(`Trade executed successfully`);
-        addToLog(
-          `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
-        );
-        return true;
-      } else {
-        throw new Error(data.error || "Failed to execute swap");
-      }
+      toastr.success(`Trade executed successfully`);
+      this.currentAmount = parseFloat(data.updateTransaction.toAmount);
+      addToLog(
+        `Trade executed: ${fromToken} → ${toToken} Amount: ${this.currentAmount} at ${currentPrice}`
+      );
+      return true;
     } catch (error) {
-      console.error("Swap execution failed");
       toastr.error("Insufficient funds or network error");
       return false;
     } finally {
