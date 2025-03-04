@@ -144,17 +144,13 @@ class TradingBot {
       body: JSON.stringify(txData),
       signal: controller.signal,
     }).catch(() => {
-      return { ok: false };
-    });
-
-    if (!response.ok) {
       toastr.error("Error executing trade");
       this.isSwapping = false;
       clearTimeout(timeoutId);
       return false;
-    }
-    clearTimeout(timeoutId);
+    });
 
+    clearTimeout(timeoutId);
     const data = await response.json();
     toastr.success(`Trade executed successfully`);
     this.currentAmount = parseFloat(data.updateTransaction.toAmount);
