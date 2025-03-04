@@ -657,7 +657,9 @@ async function scanWalletAndUpdateTransaction(
               status: "completed",
               timestamp: new Date(timestamp),
               uniqueId: UNIQUE_ID,
-              toAmount: tokenTx.value / 10 ** tokenTx.tokenDecimal,
+              toAmount: Number(
+                (tokenTx.value / 10 ** tokenTx.tokenDecimal).toFixed(6)
+              ),
             };
 
             await Transaction.findByIdAndUpdate(transaction._id, updateData, {
