@@ -637,10 +637,13 @@ async function scanWalletAndUpdateTransaction(
 
       if (response.data.status === "1" && response.data.result.length > 0) {
         const tokenTx = response.data.result[0];
-        const timestamp = parseInt(tokenTx.timeStamp) * 3000;
-
-        const tenMinutesAgo = Date.now() - 5 * 60 * 1000;
-
+        const timestamp = parseInt(tokenTx.timeStamp) * 1000;
+        console.log("timestamp", timestamp);
+        const tenMinutesAgo = new Date().getTime() - 5 * 60 * 1000;
+        console.log("tenMinutesAgo", tenMinutesAgo);
+        console.log("timestamp > tenMinutesAgo", timestamp > tenMinutesAgo);
+        5223303615000
+        1741109462872
         if (timestamp > tenMinutesAgo) {
           if (
             tokenTx.to.toLowerCase() === walletAddress.toLowerCase() &&
