@@ -119,10 +119,15 @@ class TradingBot {
       chainId: CHAINS[document.getElementById("chain").value],
       fromToken,
       toToken,
-      amount: (this.currentAmount || this.initialAmount).toString(),
+      amount: this.currentAmount.toString(),
       slippage: this.slippage,
       gasPriority: this.gasPriority,
     };
+
+    const latestTx = await this.getLatestTransaction();
+    if (latestTx) {
+      txData.amount = parseFloat(latestTx.toAmount).toString(); 
+    }
 
     let apiUrl;
     if (swapService === "1inch") {
