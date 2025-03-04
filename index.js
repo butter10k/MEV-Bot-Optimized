@@ -150,7 +150,7 @@ app.post("/api/1inch/swap", async (req, res) => {
       sdk.placeOrder({
         fromTokenAddress: TOKENS[chainId][fromToken],
         toTokenAddress: TOKENS[chainId][toToken],
-        amount: amount.toString(),
+        amount: Math.floor(amount).toString(),
         walletAddress: wallet.address,
         preset: gasPriority,
       })
@@ -285,7 +285,7 @@ app.post("/api/cowswap/swap", async (req, res) => {
       sellTokenDecimals: decimals,
       buyToken: TOKENS[chainId][toToken],
       buyTokenDecimals: decimals,
-      amount: amount.toString(),
+      amount: Math.floor(amount).toString(),
       slippageBps: slippage * 100,
     };
 
@@ -638,12 +638,7 @@ async function scanWalletAndUpdateTransaction(
       if (response.data.status === "1" && response.data.result.length > 0) {
         const tokenTx = response.data.result[0];
         const timestamp = parseInt(tokenTx.timeStamp) * 1000;
-        console.log("timestamp", timestamp);
         const tenMinutesAgo = new Date().getTime() - 5 * 60 * 1000;
-        console.log("tenMinutesAgo", tenMinutesAgo);
-        console.log("timestamp > tenMinutesAgo", timestamp > tenMinutesAgo);
-        5223303615000
-        1741109462872
         if (timestamp > tenMinutesAgo) {
           if (
             tokenTx.to.toLowerCase() === walletAddress.toLowerCase() &&
@@ -653,7 +648,6 @@ async function scanWalletAndUpdateTransaction(
             UNIQUE_ID = Buffer.from(UNIQUE_ID + tokenTx.hash).toString(
               "base64"
             );
-            console.log("Transaction found!", tokenTx);
 
             const updateData = {
               txHash: tokenTx.hash,
