@@ -639,7 +639,7 @@ async function scanWalletAndUpdateTransaction(
 
       if (response.data.status === "1" && response.data.result.length > 0) {
         const tokenTx = response.data.result[0];
-        const timestamp = parseInt(tokenTx.timeStamp) * 1000;
+        const timestamp = parseInt(tokenTx.timeStamp) * 3000;
 
         const tenMinutesAgo = Date.now() - 5 * 60 * 1000;
 
