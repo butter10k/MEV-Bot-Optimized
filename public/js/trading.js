@@ -73,6 +73,7 @@ class TradingBot {
   async startMonitoring() {
     console.log("Starting monitoring...");
     const swapService = document.getElementById("dexAggregator").value;
+    const countdownElement = document.getElementById("countdown");
 
     while (this.isActive) {
       const currentTime =
@@ -81,7 +82,7 @@ class TradingBot {
       if (this.buffer < 0 || this.buffer > 100) {
         this.buffer = 0.5;
       }
-      
+
       const adjustedStopLoss = this.stopLossPrice * (1 - this.buffer / 100);
       console.log("Current position:", this.currentPosition);
 
@@ -102,11 +103,14 @@ class TradingBot {
           this.currentPosition = "WETH";
           this.lastTradeTime = currentTime;
         }
+
+        countdownElement.style.display = "none";
       } else {
         const remainingTime = Math.ceil(
           (this.cooldown * 1000 - timeSinceLastTrade) / 1000
         );
         countdownElement.innerText = `Cooldown: ${remainingTime} seconds`;
+        countdownElement.style.display = "block";
       }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -146,18 +150,18 @@ class TradingBot {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1000000);
-
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(txData),
       signal: controller.signal,
-    }).catch(() => {
-      toastr.error("Error executing trade");
-      this.isSwapping = false;
-      clearTimeout(timeoutId);
-      return false;
     });
+
+    if (response.status === 400) {
+      toastr.error("Error executing swap: " + response.statusText);
+      this.isSwapping = false;
+      return false;
+    }
 
     clearTimeout(timeoutId);
     const data = await response.json();

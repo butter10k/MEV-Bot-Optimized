@@ -1,13 +1,10 @@
 @charset "UTF-8";
 .countdown-timer {
-  font-size: 1.2em; 
-  color: #ffcc00; 
-  background-color: rgba(0, 0, 0, 0.7); 
-  padding: 10px; 
+  font-size: 0.8em; 
+  color: red; 
   border-radius: 5px; 
   text-align: center; 
   margin: 10px 0; 
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); 
 }
 
 /* Simulation controls styling */
