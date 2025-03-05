@@ -163,6 +163,7 @@ app.post("/api/1inch/swap", async (req, res) => {
         amount: Math.floor(amount).toString(),
         walletAddress: wallet.address,
         preset: gasPriority,
+        allowPartialFills: false,
       })
     );
 
