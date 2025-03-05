@@ -59,15 +59,9 @@ function updateStablecoinOptions() {
   const stablecoinSelect = document.getElementById("stablecoin");
   if (!stablecoinSelect) return;
   stablecoinSelect.innerHTML = "";
-
-  if (selectedChain === "base") {
-    stablecoinSelect.add(new Option("USDC", "USDC"));
-    stablecoinSelect.add(new Option("DAI", "DAI"));
-  } else {
-    stablecoinSelect.add(new Option("USDT", "USDT"));
-    stablecoinSelect.add(new Option("USDC", "USDC"));
-    stablecoinSelect.add(new Option("DAI", "DAI"));
-  }
+  stablecoinSelect.add(new Option("USDT", "USDT"));
+  stablecoinSelect.add(new Option("USDC", "USDC"));
+  stablecoinSelect.add(new Option("DAI", "DAI"));
 }
 
 // Add event listeners
@@ -88,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   simulationToggle.addEventListener("change", function () {
     isSimulationMode = this.checked;
-    window.isSimulationMode = isSimulationMode; 
+    window.isSimulationMode = isSimulationMode;
     simulationInputs.style.display = this.checked ? "block" : "none";
 
     if (this.checked) {
@@ -101,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
       addLogMessage(
         "Price simulation mode disabled, returning to real-time prices"
       );
-      window.simulatedPrice = null; 
+      window.simulatedPrice = null;
       getETHPrice();
     }
   });

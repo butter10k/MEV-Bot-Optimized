@@ -78,7 +78,11 @@ class TradingBot {
       const currentTime =
         new Date().getTime() - new Date().getTimezoneOffset() * 60000;
       const timeSinceLastTrade = currentTime - this.lastTradeTime;
-      const adjustedStopLoss = this.stopLossPrice - this.buffer;
+      if (this.buffer < 0 || this.buffer > 100) {
+        this.buffer = 0.5;
+      }
+      
+      const adjustedStopLoss = this.stopLossPrice * (1 - this.buffer / 100);
       console.log("Current position:", this.currentPosition);
 
       if (timeSinceLastTrade >= this.cooldown * 1000) {
@@ -98,6 +102,11 @@ class TradingBot {
           this.currentPosition = "WETH";
           this.lastTradeTime = currentTime;
         }
+      } else {
+        const remainingTime = Math.ceil(
+          (this.cooldown * 1000 - timeSinceLastTrade) / 1000
+        );
+        countdownElement.innerText = `Cooldown: ${remainingTime} seconds`;
       }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }

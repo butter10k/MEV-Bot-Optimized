@@ -55,11 +55,6 @@ const TransactionSchema = new mongoose.Schema({
     type: Number,
     default: 0.5,
   },
-
-  uniqueId: {
-    type: String,
-    default: "",
-  },
 });
 
 // Index for faster queries

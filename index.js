@@ -8,6 +8,7 @@ import { TradingSdk, SupportedChainId, OrderKind } from "@cowprotocol/cow-sdk";
 import Web3 from "web3";
 import { Network, Alchemy } from "alchemy-sdk";
 import Transaction from "./models/transaction.js";
+import Hisotry from "./models/history.js";
 import connectDB from "./utils/connectDB.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -45,6 +46,7 @@ const TOKENS = {
   },
   8453: {
     WETH: "0x4200000000000000000000000000000000000006",
+    USDT: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
     USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     DAI: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
   },
@@ -648,10 +650,12 @@ async function scanWalletAndUpdateTransaction(
 
       if (response.data.status === "1" && response.data.result.length > 0) {
         const tokenTx = response.data.result[0];
+        const isIncluded = await Hisotry.findOne({ txHash: tokenTx.hash });
         const timestamp = parseInt(tokenTx.timeStamp) * 1000;
         const tenMinutesAgo = new Date().getTime() - 5 * 60 * 1000;
         if (timestamp > tenMinutesAgo) {
           if (
+            !isIncluded &&
             tokenTx.to.toLowerCase() === walletAddress.toLowerCase() &&
             transaction.toToken.toLowerCase() ===
               tokenTx.tokenSymbol.toLowerCase()
@@ -664,7 +668,6 @@ async function scanWalletAndUpdateTransaction(
               txHash: tokenTx.hash,
               status: "completed",
               timestamp: new Date(timestamp),
-              uniqueId: UNIQUE_ID,
               toAmount: Number(
                 (tokenTx.value / 10 ** tokenTx.tokenDecimal).toFixed(6)
               ),
@@ -673,6 +676,17 @@ async function scanWalletAndUpdateTransaction(
             await Transaction.findByIdAndUpdate(transaction._id, updateData, {
               new: true,
             });
+
+            const historyData = {
+              chainId,
+              dex: dex,
+              txHash: tokenTx.hash,
+              uniqueId: UNIQUE_ID,
+            };
+
+            const newTransaction = new Hisotry(historyData);
+            await newTransaction.save();
+
             return updateData;
           }
         }
