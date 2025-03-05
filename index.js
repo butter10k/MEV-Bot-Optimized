@@ -9,6 +9,12 @@ import Web3 from "web3";
 import { Network, Alchemy } from "alchemy-sdk";
 import Transaction from "./models/transaction.js";
 import connectDB from "./utils/connectDB.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function allowance(address owner, address spender) view returns (uint256)",
@@ -46,9 +52,13 @@ const TOKENS = {
 
 const app = express();
 app.use(cors());
-app.use(express.static("public"));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 connectDB();
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 /**
  * Handles the API endpoint for fetching the price of WETH to USDT.
