@@ -28,9 +28,7 @@ function setSimulatedPrice(price) {
 }
 async function getETHPrice() {
   try {
-    // If simulation mode is enabled, use the simulated price
     if (isSimulationMode) {
-      // Just update the UI without fetching
       document.querySelector(
         ".currentPrice span"
       ).textContent = `${currentPrice.toFixed(2)} (Simulated)`;
@@ -49,7 +47,9 @@ async function getETHPrice() {
     currentPrice = parseFloat(responseData);
     document.querySelector(
       ".currentPrice span"
-    ).textContent = `${currentPrice.toFixed(2)}`;
+    ).textContent = `WETH/${selectedStablecoin} Price: $${currentPrice.toFixed(
+      2
+    )}`;
 
     return currentPrice;
   } catch (error) {
