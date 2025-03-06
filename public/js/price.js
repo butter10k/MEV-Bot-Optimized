@@ -38,8 +38,12 @@ async function getETHPrice() {
       return currentPrice;
     }
 
-    // Normal mode - fetch from API
-    const response = await fetch("/api/price");
+    const chainId = CHAINS[document.getElementById("chain").value];
+    const selectedStablecoin = document.getElementById("stablecoin").value;
+
+    const response = await fetch(
+      `/api/price?chainId=${chainId}&stablecoin=${selectedStablecoin}`
+    );
     const responseData = await response.json();
 
     currentPrice = parseFloat(responseData);

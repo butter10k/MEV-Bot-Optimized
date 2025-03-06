@@ -70,26 +70,31 @@ app.get("/", (req, res) => {
  * @returns {Promise<void>} - A Promise that resolves when the response is sent.
  */
 
-const API_KEYS = [process.env.ALCHEMY_API_KEY_1, process.env.ALCHEMY_API_KEY_2];
-
-let currentApiKeyIndex = 0;
 app.get("/api/price", async (req, res) => {
-  const settings = {
-    apiKey: API_KEYS[currentApiKeyIndex],
-    network: Network.ETH_MAINNET,
-  };
-  const alchemy = new Alchemy(settings);
-  const symbols = ["ETH"];
+  const { chainId, stablecoin } = req.query;
+  let networkId = Number(chainId);
 
   try {
-    const prices = await alchemy.prices.getTokenPriceBySymbol(symbols);
-    res.json(prices.data[0].prices[0].value);
+    const response = await axios.get(
+      `${process.env.INCH_API_URL}/${networkId}/quote`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.INCH_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        params: {
+          fromTokenAddress: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          toTokenAddress: TOKENS[networkId][stablecoin],
+          amount: "1000000000000000000",
+        },
+      }
+    );
+
+    const decimals = await getDecimals(chainId, TOKENS[chainId][stablecoin]);
+    const price = response.data.dstAmount / Math.pow(10, decimals);
+
+    res.json(price);
   } catch (error) {
-    if (error.response && error.response.status === 429) {
-      console.log("Received 429 error. Switching API key...");
-      currentApiKeyIndex = (currentApiKeyIndex + 1) % API_KEYS.length;
-      return app.get("/api/price", req, res);
-    }
     res.status(500).json({ error: error.message });
   }
 });
