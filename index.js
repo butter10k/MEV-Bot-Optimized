@@ -468,6 +468,7 @@ const getDecimals = async (chainId, tokenAddress) => {
     "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1": 18, // DAI on Arbitrum/Optimism
     "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58": 6, // USDT on Optimism
     "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85": 6, // USDC on Optimism
+    "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2":6, // USDT on Base
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913": 6, // USDC on Base
     "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb": 18, // DAI on Base
   };
