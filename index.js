@@ -6,7 +6,6 @@ import { ethers, Contract } from "ethers";
 import { FusionSDK, PrivateKeyProviderConnector } from "@1inch/fusion-sdk";
 import { TradingSdk, SupportedChainId, OrderKind } from "@cowprotocol/cow-sdk";
 import Web3 from "web3";
-import { Network, Alchemy } from "alchemy-sdk";
 import Transaction from "./models/transaction.js";
 import Hisotry from "./models/history.js";
 import connectDB from "./utils/connectDB.js";
@@ -278,8 +277,6 @@ app.post("/api/cowswap/swap", async (req, res) => {
       signer: wallet,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
     const tokenContract = new Contract(
       TOKENS[chainId][fromToken],
       ERC20_ABI,
@@ -290,6 +287,8 @@ app.post("/api/cowswap/swap", async (req, res) => {
       wallet.address,
       COWSWAP_CONTRACT
     );
+
+    console.log("Current allowance:", currentAllowance.toString());
 
     if (
       currentAllowance.lt(ethers.BigNumber.from(Math.floor(amount).toString()))
@@ -315,6 +314,8 @@ app.post("/api/cowswap/swap", async (req, res) => {
       amount: Math.floor(amount).toString(),
       slippageBps: slippage * 100,
     };
+
+    console.log("Parameters:", parameters);
 
     const orderId = await executeWithRetry(() => sdk.postSwapOrder(parameters));
     console.log("Order ID:", orderId);

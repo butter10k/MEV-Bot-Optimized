@@ -61,11 +61,21 @@ async function getETHPrice() {
 function updateStablecoinOptions() {
   const selectedChain = document.getElementById("chain").value;
   const stablecoinSelect = document.getElementById("stablecoin");
-  if (!stablecoinSelect) return;
+  const dexAggregatorSelect = document.getElementById("dexAggregator");
+
+  if (!stablecoinSelect || !dexAggregatorSelect) return;
+
   stablecoinSelect.innerHTML = "";
   stablecoinSelect.add(new Option("USDT", "USDT"));
   stablecoinSelect.add(new Option("USDC", "USDC"));
   stablecoinSelect.add(new Option("DAI", "DAI"));
+
+  if (selectedChain === "optimism") {
+      dexAggregatorSelect.querySelector('option[value="cowswap"]').style.display = "none";
+      dexAggregatorSelect.value = "1inch";
+  } else {
+      dexAggregatorSelect.querySelector('option[value="cowswap"]').style.display = "block";
+  }
 }
 
 // Add event listeners

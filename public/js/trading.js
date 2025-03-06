@@ -82,11 +82,16 @@ class TradingBot {
       let adjustedStopLoss;
       if (this.currentPosition === "WETH") {
         adjustedStopLoss = this.stopLossPrice - this.buffer;
-      } else {
-        adjustedStopLoss = this.stopLossPrice + this.buffer;
       }
 
+      if (this.currentPosition === "STABLE") {
+        adjustedStopLoss = this.stopLossPrice + this.buffer;
+      }
+      console.log("Adjusted stop loss:", adjustedStopLoss);
+      console.log("buffer:", this.buffer);
+
       console.log("Current position:", this.currentPosition);
+      console.log("Current price:", currentPrice);
 
       if (timeSinceLastTrade >= this.cooldown * 1000) {
         console.log("Checking for trade opportunities...");
@@ -100,7 +105,7 @@ class TradingBot {
           countdownElement.style.display = "block";
           await this.countdownCooldown();
         } else if (
-          currentPrice > this.stopLossPrice &&
+          currentPrice > adjustedStopLoss &&
           this.currentPosition === "STABLE"
         ) {
           await this.executeSwap(this.selectedStablecoin, "WETH", swapService);
