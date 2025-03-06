@@ -15,7 +15,7 @@ class TradingBot {
     this.initialAmount = 0;
     this.currentAmount = 0;
     this.selectedStablecoin = "";
-    this.buffer = 0.5;
+    this.buffer = 0;
     this.cooldown = 5;
     this.gasPriority = "normal";
     this.isUSDMode = false;
@@ -29,7 +29,7 @@ class TradingBot {
       config.slippage === "Auto" ? 0.5 : parseFloat(config.slippage);
     this.initialAmount = parseFloat(config.initialAmount);
     this.selectedStablecoin = config.stablecoin;
-    this.buffer = config.buffer ? parseFloat(config.buffer) : 0.5;
+    this.buffer = config.buffer ? parseFloat(config.buffer) : 0;
     this.cooldown = config.cooldown ? parseInt(config.cooldown) : 5;
     this.gasPriority = config.gasPriority || "normal";
     this.isUSDMode = config.isUSDMode || false;
