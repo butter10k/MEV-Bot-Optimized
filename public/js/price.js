@@ -136,4 +136,4 @@ function addLogMessage(message) {
   logContainer.insertBefore(logItem, logContainer.firstChild);
 }
 
-setInterval(getETHPrice, 10000);
+setInterval(getETHPrice, 5000);
