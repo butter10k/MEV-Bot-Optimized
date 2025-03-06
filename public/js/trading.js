@@ -79,7 +79,13 @@ class TradingBot {
       const currentTime =
         new Date().getTime() - new Date().getTimezoneOffset() * 60000;
       const timeSinceLastTrade = currentTime - this.lastTradeTime;
-      const adjustedStopLoss = this.stopLossPrice  - this.buffer;
+      let adjustedStopLoss;
+      if (this.currentPosition === "WETH") {
+        adjustedStopLoss = this.stopLossPrice - this.buffer;
+      } else {
+        adjustedStopLoss = this.stopLossPrice + this.buffer;
+      }
+
       console.log("Current position:", this.currentPosition);
 
       if (timeSinceLastTrade >= this.cooldown * 1000) {
