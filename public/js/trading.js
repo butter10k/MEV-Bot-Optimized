@@ -97,6 +97,8 @@ class TradingBot {
           await this.executeSwap("WETH", this.selectedStablecoin, swapService);
           this.currentPosition = "STABLE";
           this.lastTradeTime = currentTime;
+          countdownElement.style.display = "block";
+          await this.countdownCooldown();
         } else if (
           currentPrice > this.stopLossPrice &&
           this.currentPosition === "STABLE"
@@ -104,18 +106,26 @@ class TradingBot {
           await this.executeSwap(this.selectedStablecoin, "WETH", swapService);
           this.currentPosition = "WETH";
           this.lastTradeTime = currentTime;
+          countdownElement.style.display = "block";
+          await this.countdownCooldown();
         }
 
         countdownElement.style.display = "none";
-      } else {
-        const remainingTime = Math.ceil(
-          (this.cooldown * 1000 - timeSinceLastTrade) / 1000
-        );
-        countdownElement.innerText = `Cooldown: ${remainingTime} seconds`;
-        countdownElement.style.display = "block";
       }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
+  }
+
+  async countdownCooldown() {
+    const countdownElement = document.getElementById("countdown");
+    let remainingTime = this.cooldown;
+
+    while (remainingTime > 0) {
+      countdownElement.innerText = `Cooldown: ${remainingTime} seconds`;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      remainingTime--;
+    }
+    countdownElement.style.display = "none";
   }
 
   async executeSwap(fromToken, toToken, swapService) {
