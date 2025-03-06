@@ -153,7 +153,7 @@ app.post("/api/1inch/swap", async (req, res) => {
       LIMIT_ORDER_CONTRACT
     );
 
-    if (currentAllowance.lt(ethers.BigNumber.from(amount.toString()))) {
+    if (currentAllowance.lt(ethers.BigNumber.from(Math.floor(amount).toString()))) {
       try {
         const approveTx = await tokenContract.approve(
           LIMIT_ORDER_CONTRACT,
