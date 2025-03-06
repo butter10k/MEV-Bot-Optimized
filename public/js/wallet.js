@@ -19,15 +19,8 @@ async function updateChainBalance() {
   const swapBalance = document.getElementById("swapBalance");
   const selectedChain = chainSelect.value;
   const isUSDMode = window.isUSDMode;
-  const selectedStablecoin = document.getElementById("stablecoin").value;
-
-  const walletAddressElement = document.getElementById("walletAddress");
-  if (
-    walletAddressElement &&
-    walletAddressElement.textContent === "0x00...000"
-  ) {
-    displayWalletAddress();
-  }
+  const stablecoin = document.getElementById("stablecoin");
+  const selectedStablecoin = stablecoin ? stablecoin.value : "USDC";
 
   currentBalances = await getAllBalances(selectedChain);
 
@@ -35,17 +28,19 @@ async function updateChainBalance() {
   walletBalance.textContent =
     ethBalance === 0 ? "0 ETH" : `${Number(ethBalance).toFixed(4)} ETH`;
 
-  if (isUSDMode) {
-    const stablecoinBalance =
-      parseFloat(currentBalances[selectedStablecoin.toLowerCase()]) || 0;
-    swapBalance.innerHTML = `<img src="/wallet-two.png"> ${Number(
-      stablecoinBalance
-    ).toFixed(2)} ${selectedStablecoin}`;
-  } else {
-    const wethBalance = parseFloat(currentBalances.weth) || 0;
-    swapBalance.innerHTML = `<img src="/wallet-two.png"> ${Number(
-      wethBalance
-    ).toFixed(4)} WETH`;
+  if (swapBalance) {
+    if (isUSDMode) {
+      const stablecoinBalance =
+        parseFloat(currentBalances[selectedStablecoin.toLowerCase()]) || 0;
+      swapBalance.innerHTML = `<img src="/wallet-two.png" alt="wallet"> ${Number(
+        stablecoinBalance
+      ).toFixed(2)} ${selectedStablecoin}`;
+    } else {
+      const wethBalance = parseFloat(currentBalances.weth) || 0;
+      swapBalance.innerHTML = `<img src="/wallet-two.png" alt="wallet"> ${Number(
+        wethBalance
+      ).toFixed(4)} WETH`;
+    }
   }
 }
 
@@ -87,17 +82,21 @@ async function getAllBalances(selectedChain) {
   }
 }
 
-document.getElementById("chain").addEventListener("change", updateChainBalance);
-document
-  .getElementById("stablecoin")
-  .addEventListener("change", updateChainBalance);
+function initializeWalletInfo() {
+  displayWalletAddress();
+  updateChainBalance();
+}
 
+document.getElementById("chain").addEventListener("change", updateChainBalance);
+const stablecoinElement = document.getElementById("stablecoin");
+if (stablecoinElement) {
+  stablecoinElement.addEventListener("change", updateChainBalance);
+}
 document.addEventListener("DOMContentLoaded", function () {
   const usdModeCheckbox = document.querySelector("#startUSD .checkbox");
   if (usdModeCheckbox) {
     usdModeCheckbox.addEventListener("change", updateChainBalance);
   }
 
-  updateChainBalance();
-  displayWalletAddress();
+  initializeWalletInfo();
 });

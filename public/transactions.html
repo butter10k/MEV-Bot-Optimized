@@ -84,7 +84,7 @@
 			</div>
 			<div id="walletInfo" class="wallet-info">
 				<img src="/wallet.png">
-				<span id="walletBalance">0.00 ETH</span>
+				<span id="walletBalance">0.0000 ETH</span>
 				<span id="walletAddress">0x00...000</span>
 			</div>
 		</div>
@@ -111,6 +111,9 @@
 		</div>
 	</div>
 	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			loadTransactions();
+		});
 		async function loadTransactions() {
 			try {
 				const spinner = document.getElementById('loadingSpinner');
@@ -187,7 +190,6 @@
 			return `${explorers[chainId]}/tx/${txHash}`;
 		}
 
-		document.addEventListener('DOMContentLoaded', loadTransactions);
 		document.querySelector('button[onclick="loadTransactions()"]')
 			.addEventListener('click', loadTransactions);
 	</script>
