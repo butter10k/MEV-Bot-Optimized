@@ -148,7 +148,7 @@
 						</div>
 						<div>${new Date(tx.timestamp).toLocaleString('en-US', { timeZone: 'UTC' })}</div>
 						<div>
-						${formatAmount(tx.fromAmount)} ${tx.fromToken} at ${tx.toAmount} ${tx.toToken}
+						${formatAmount(tx.fromAmount)} ${tx.fromToken} for ${tx.toAmount} ${tx.toToken}
 						</div>
 						<div class="status status-${type.toLowerCase()}">
 						${type}

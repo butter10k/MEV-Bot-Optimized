@@ -1,15 +1,17 @@
 @charset "UTF-8";
 .countdown-timer {
-  font-size: 0.8em; 
-  color: red; 
-  border-radius: 5px; 
-  text-align: center; 
-  margin: 10px 0; 
+    font-size: 0.8em;
+    color: red;
+    border-radius: 5px;
+    margin: 10px 0;
+    position: absolute;
+    top: 15px;
+    right: 25px;
 }
 
 /* Simulation controls styling */
 .simulation-controls {
-  padding: 10px 0;
+  padding: 0;
 }
 
 .apply-btn {
@@ -417,7 +419,11 @@ label {
 }
 
 .transaction-item > div {
-  width: 30%;
+  width: 41%;
+}
+
+.transaction-item > div:first-child, .transaction-item > div:nth-child(2) {
+    width: 25%;
 }
 
 .transaction-item > div:last-child {
@@ -492,6 +498,58 @@ button:hover {
   font-size: 12px;
   padding-bottom: 12px;
   color: #5c5c5c;
+}
+
+#priceSimulation {
+	
+}
+
+#priceSimulation h3 {
+    margin-bottom: 0;
+}
+
+.simulation-controls .switch {
+    position: absolute;
+    top: 19px;
+    right: 23px;
+    width: 40px;
+    height: 22px;
+}
+
+#simulationInputs {
+    padding-top: 5px;
+}
+
+.simulation-controls .slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  top: 3px;
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input#simulationToggle:checked + .slider:before {
+  -webkit-transform: translateX(15px);
+  -ms-transform: translateX(15px);
+  transform: translateX(15px);
+}
+
+#swapBalance {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    position: absolute;
+    top: 1px;
+    right: 99px;
+}
+
+#swapBalance img {
+    height: 11px;
+    padding-right: 5px;
 }
 
 @media (max-width: 1200px) {

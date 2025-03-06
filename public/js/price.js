@@ -71,10 +71,12 @@ function updateStablecoinOptions() {
   stablecoinSelect.add(new Option("DAI", "DAI"));
 
   if (selectedChain === "optimism") {
-      dexAggregatorSelect.querySelector('option[value="cowswap"]').style.display = "none";
-      dexAggregatorSelect.value = "1inch";
+    dexAggregatorSelect.querySelector('option[value="cowswap"]').style.display =
+      "none";
+    dexAggregatorSelect.value = "1inch";
   } else {
-      dexAggregatorSelect.querySelector('option[value="cowswap"]').style.display = "block";
+    dexAggregatorSelect.querySelector('option[value="cowswap"]').style.display =
+      "block";
   }
 }
 
@@ -140,7 +142,8 @@ function addLogMessage(message) {
   const logItem = document.createElement("p");
   logItem.className = "log-item";
 
-  const timestamp = new Date().toLocaleTimeString();
+  let timestamp = new Date().toUTCString();
+  timestamp = timestamp.replace("GMT", "UTC");
   logItem.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
 
   logContainer.insertBefore(logItem, logContainer.firstChild);

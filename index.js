@@ -152,7 +152,9 @@ app.post("/api/1inch/swap", async (req, res) => {
       LIMIT_ORDER_CONTRACT
     );
 
-    if (currentAllowance.lt(ethers.BigNumber.from(Math.floor(amount).toString()))) {
+    if (
+      currentAllowance.lt(ethers.BigNumber.from(Math.floor(amount).toString()))
+    ) {
       try {
         const approveTx = await tokenContract.approve(
           LIMIT_ORDER_CONTRACT,
@@ -412,40 +414,90 @@ app.get("/api/transactions/latest", async (req, res) => {
  */
 app.get("/api/wallet/balance", async (req, res) => {
   try {
-    const { chain, token } = req.query;
+    const { chain } = req.query;
+    const chainId = parseInt(chain);
 
-    console.log("chain:", chain);
-    console.log("token:", token);
-    if (!chain || !token) {
-      return res.status(400).json({ error: "Missing required parameters" });
+    if (!chainId) {
+      return res
+        .status(400)
+        .json({ error: "Missing or invalid chain parameter" });
     }
 
     const rpc_url =
-      chain == 1
+      chainId === 1
         ? process.env.ETH_RPC_URL
-        : chain == 10
+        : chainId === 10
         ? process.env.OPTIMISM_RPC_URL
-        : chain == 8453
+        : chainId === 8453
         ? process.env.BASE_RPC_URL
-        : chain == 42161
+        : chainId === 42161
         ? process.env.ARBITRUM_RPC_URL
         : process.env.ETH_RPC_URL;
-    const provider = new ethers.providers.JsonRpcProvider(rpc_url);
-    const tokenContract = new Contract(
-      token,
-      ["function balanceOf(address owner) view returns (uint256)"],
-      provider
-    );
-    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-    const decimals = await getDecimals(chain, token);
-    const balanceWei = await tokenContract.balanceOf(wallet.address);
-    const balance = balanceWei / 10 ** decimals;
-    console.log("balance:", balance);
 
-    return res.json({ balance });
+    const provider = new ethers.providers.JsonRpcProvider(rpc_url);
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+    const ethBalanceWei = await provider.getBalance(wallet.address);
+    const ethBalance = ethers.utils.formatEther(ethBalanceWei);
+
+    const tokenSymbols = ["WETH", "USDT", "USDC", "DAI"];
+
+    const erc20Abi = [
+      "function balanceOf(address) view returns (uint256)",
+      "function decimals() view returns (uint8)",
+    ];
+
+    const balancePromises = tokenSymbols.map(async (symbol) => {
+      try {
+        const tokenAddress = TOKENS[chainId][symbol];
+        if (!tokenAddress) {
+          console.warn(`Token ${symbol} not available on chain ${chainId}`);
+          return [symbol.toLowerCase(), "0"];
+        }
+
+        const tokenContract = new ethers.Contract(
+          tokenAddress,
+          erc20Abi,
+          provider
+        );
+
+        const [balanceWei, decimals] = await Promise.all([
+          tokenContract.balanceOf(wallet.address),
+          tokenContract.decimals(),
+        ]);
+
+        const balance = ethers.utils.formatUnits(balanceWei, decimals);
+        return [symbol.toLowerCase(), balance];
+      } catch (error) {
+        console.error(`Error fetching ${symbol} balance:`, error);
+        return [symbol.toLowerCase(), "0"];
+      }
+    });
+
+    const tokenBalanceEntries = await Promise.all(balancePromises);
+
+    const tokenBalances = Object.fromEntries(tokenBalanceEntries);
+
+    const allBalances = {
+      eth: ethBalance,
+      ...tokenBalances,
+    };
+
+    return res.json(allBalances);
   } catch (error) {
-    console.error("Error fetching token balance:", error);
+    console.error("Error fetching token balances:", error);
     return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/wallet/address", (req, res) => {
+  try {
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
+    const address = wallet.address;
+    res.json({ address });
+  } catch (error) {
+    console.error("Error getting wallet address:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -469,7 +521,7 @@ const getDecimals = async (chainId, tokenAddress) => {
     "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1": 18, // DAI on Arbitrum/Optimism
     "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58": 6, // USDT on Optimism
     "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85": 6, // USDC on Optimism
-    "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2":6, // USDT on Base
+    "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2": 6, // USDT on Base
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913": 6, // USDC on Base
     "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb": 18, // DAI on Base
   };
@@ -656,7 +708,7 @@ async function scanWalletAndUpdateTransaction(
 
   let found = false;
   let attempts = 0;
-  const maxAttempts = 25;
+  const maxAttempts = 60;
 
   while (!found && attempts < maxAttempts) {
     try {
