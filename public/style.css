@@ -1,12 +1,28 @@
 @charset "UTF-8";
 .countdown-timer {
-    font-size: 0.8em;
-    color: red;
-    border-radius: 5px;
-    margin: 10px 0;
-    position: absolute;
-    top: 15px;
-    right: 25px;
+  font-size: 0.8em;
+  color: red;
+  border-radius: 5px;
+  margin: 10px 0;
+  position: absolute;
+  top: 15px;
+  right: 25px;
+}
+
+.disabled-field {
+  background-color: #f0f0f0;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.status-running {
+  color: #2ecc71;
+  font-weight: bold;
+}
+
+.status-stopped {
+  color: #e74c3c;
+  font-weight: bold;
 }
 
 /* Simulation controls styling */
@@ -422,8 +438,9 @@ label {
   width: 41%;
 }
 
-.transaction-item > div:first-child, .transaction-item > div:nth-child(2) {
-    width: 25%;
+.transaction-item > div:first-child,
+.transaction-item > div:nth-child(2) {
+  width: 25%;
 }
 
 .transaction-item > div:last-child {
@@ -501,23 +518,22 @@ button:hover {
 }
 
 #priceSimulation {
-	
 }
 
 #priceSimulation h3 {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .simulation-controls .switch {
-    position: absolute;
-    top: 19px;
-    right: 23px;
-    width: 40px;
-    height: 22px;
+  position: absolute;
+  top: 19px;
+  right: 23px;
+  width: 40px;
+  height: 22px;
 }
 
 #simulationInputs {
-    padding-top: 5px;
+  padding-top: 5px;
 }
 
 .simulation-controls .slider:before {
@@ -539,17 +555,17 @@ input#simulationToggle:checked + .slider:before {
 }
 
 #swapBalance {
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    position: absolute;
-    top: 1px;
-    right: 99px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: 1px;
+  right: 99px;
 }
 
 #swapBalance img {
-    height: 11px;
-    padding-right: 5px;
+  height: 11px;
+  padding-right: 5px;
 }
 
 @media (max-width: 1200px) {

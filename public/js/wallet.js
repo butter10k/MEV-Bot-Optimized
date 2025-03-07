@@ -5,7 +5,23 @@ const CHAIN_IDS = {
   base: 8453,
 };
 
-let currentBalances = {};
+window.currentBalances = {};
+
+function initializeWalletInfo() {
+  displayWalletAddress();
+  updateChainBalance();
+
+  balanceUpdateInterval = setInterval(updateChainBalance, 5 * 60 * 1000);
+
+  window.addEventListener("beforeunload", clearBalanceInterval);
+}
+
+function clearBalanceInterval() {
+  if (balanceUpdateInterval) {
+    clearInterval(balanceUpdateInterval);
+    balanceUpdateInterval = null;
+  }
+}
 /**
  * Updates the wallet balance for the selected Ethereum chain.
  *
@@ -22,7 +38,7 @@ async function updateChainBalance() {
   const stablecoin = document.getElementById("stablecoin");
   const selectedStablecoin = stablecoin ? stablecoin.value : "USDC";
 
-  currentBalances = await getAllBalances(selectedChain);
+  window.currentBalances = await getAllBalances(selectedChain);
 
   const ethBalance = parseFloat(currentBalances.eth) || 0;
   walletBalance.textContent =
@@ -80,11 +96,6 @@ async function getAllBalances(selectedChain) {
     console.error("Error fetching balances:", error);
     return { eth: 0, weth: 0, usdt: 0, usdc: 0, dai: 0 };
   }
-}
-
-function initializeWalletInfo() {
-  displayWalletAddress();
-  updateChainBalance();
 }
 
 document.getElementById("chain").addEventListener("change", updateChainBalance);

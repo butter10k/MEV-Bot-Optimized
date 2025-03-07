@@ -21,8 +21,68 @@ class TradingBot {
     this.isUSDMode = false;
   }
 
+  /**
+   * Validates if there's enough balance for the initial swap
+   * @param {Object} config - Bot configuration object
+   * @returns {boolean} - Whether there's enough balance
+   */
+  async validateBalance(config) {
+    try {
+      const isUSDMode = config.isUSDMode || false;
+      const initialAmount = parseFloat(config.initialAmount);
+      const selectedStablecoin = config.stablecoin;
+
+      if (!window.currentBalances) {
+        console.error("Cannot validate balance: currentBalances not available");
+        return false;
+      }
+
+      let requiredToken, availableBalance;
+
+      if (isUSDMode) {
+        requiredToken = selectedStablecoin;
+        availableBalance =
+          parseFloat(
+            window.currentBalances[selectedStablecoin.toLowerCase()]
+          ) || 0;
+      } else {
+        requiredToken = "WETH";
+        availableBalance = parseFloat(window.currentBalances.weth) || 0;
+      }
+
+      console.log(
+        `Validating balance: Need ${initialAmount} ${requiredToken}, Have ${availableBalance} ${requiredToken}`
+      );
+
+      if (availableBalance < initialAmount) {
+        toastr.error(
+          `Insufficient balance! You need at least ${initialAmount} ${requiredToken} but only have ${availableBalance.toFixed(
+            6
+          )} ${requiredToken}`
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      toastr.error("Failed to validate balance");
+      return false;
+    }
+  }
+
+  /**
+   * Shows an error message to the user
+   * @param {string} message - Error message to display
+   */
   async start(config) {
     console.log("Starting bot with config:", config);
+
+    const hasEnoughBalance = await this.validateBalance(config);
+    if (!hasEnoughBalance) {
+      console.log("Bot start canceled due to insufficient balance");
+      return false;
+    }
+
     this.isActive = true;
     this.stopLossPrice = parseFloat(config.stopLossPrice);
     this.slippage =
@@ -34,6 +94,8 @@ class TradingBot {
     this.gasPriority = config.gasPriority || "normal";
     this.isUSDMode = config.isUSDMode || false;
     this.currentPosition = config.isUSDMode ? "STABLE" : "WETH";
+
+    this.toggleFormFields(false);
 
     const latestTx = await this.getLatestTransaction();
     if (latestTx) {
@@ -54,9 +116,11 @@ class TradingBot {
     }
 
     await this.startMonitoring();
+    return true;
   }
   async stop() {
     this.isActive = false;
+    this.toggleFormFields(true);
   }
 
   async getLatestTransaction() {
@@ -189,6 +253,37 @@ class TradingBot {
     );
     this.isSwapping = false;
     return true;
+  }
+
+  toggleFormFields(enabled) {
+    const inputFields = document.querySelectorAll("input, select, textarea");
+
+    const excludedFieldIds = [
+      "stopButton",
+      "simulationToggle",
+      "simulatedPrice",
+      "applyPrice",
+    ];
+
+    inputFields.forEach((field) => {
+      if (!excludedFieldIds.includes(field.id)) {
+        field.disabled = !enabled;
+
+        if (!enabled) {
+          field.classList.add("disabled-input");
+        } else {
+          field.classList.remove("disabled-input");
+        }
+      }
+    });
+
+    const startButton = document.getElementById("startButton");
+    const stopButton = document.getElementById("stopButton");
+
+    if (startButton && stopButton) {
+      startButton.style.display = enabled ? "block" : "none";
+      stopButton.style.display = enabled ? "none" : "block";
+    }
   }
 }
 
