@@ -127,3 +127,10 @@ This software is for educational purposes only. Use at your own risk. The creato
 <div align="center">
   <img src="https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F%20by-Developers-blue?style=for-the-badge" alt="Made with love">
 </div>
+
+## 📫 Contact
+
+Feel free to reach out if you have any questions or suggestions:
+
+- Email: [ruizsalvador951011@gmail.com](mailto:ruizsalvador951011@gmail.com)
+- Telegram: [@k9h_butter](https://t.me/k9h_butter)
