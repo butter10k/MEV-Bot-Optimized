@@ -1,4 +1,4 @@
-# 🤖 StopLoss Trading Bot
+# 🤖 Ethereum Stop-Loss Trading Bot
 
 <div align="center">
   
