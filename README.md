@@ -68,18 +68,6 @@ MONGODB_URL=your_mongodb_connection_string
 ```bash
 npm start
 ```
-
-### With Custom Configuration File
-
-```bash
-npm start -- --config=my-config.json
-```
-
-### Running in Background
-
-```bash
-npm run start:daemon
-```
 ## 🔄 Supported DEX Aggregators
 
 <div align="center">
