@@ -35,8 +35,8 @@ This StopLoss Trading Bot monitors token prices across multiple chains and autom
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/yourusername/stoploss-trading-bot.git
-cd stoploss-trading-bot
+git clone https://github.com/butter1011/Eth-TradingBot-Stop-loss.git
+cd Eth-TradingBot-Stop-loss
 npm install
 ```
 
@@ -48,27 +48,17 @@ Create a `.env` file in the root directory with the following variables:
 # Wallet Configuration
 PRIVATE_KEY=your_private_key_here
 
+# API Endpoints
+INCH_API_URL=your_1inch_api_url
+
 # RPC Endpoints
-ETHEREUM_RPC=https://mainnet.infura.io/v3/your_infura_key
-ARBITRUM_RPC=https://arb1.arbitrum.io/rpc
-BASE_RPC=https://mainnet.base.org
-OPTIMISM_RPC=https://mainnet.optimism.io
+ETH_RPC_URL=https://mainnet.infura.io/v3/your_infura_key
+ARBITRUM_RPC_URL=https://arb1.arbitrum.io/rpc
+BASE_RPC_URL=https://mainnet.base.org
+OPTIMISM_RPC_URL=https://mainnet.optimism.io
 
-# DEX Aggregator API Keys
-ONEINCH_API_KEY=your_1inch_api_key
-PARASWAP_API_KEY=your_paraswap_api_key
-KYBERSWAP_API_KEY=your_kyberswap_api_key
-
-# Notification Settings (Optional)
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_CHAT_ID=your_telegram_chat_id
-DISCORD_WEBHOOK_URL=your_discord_webhook_url
-EMAIL_SERVICE=gmail
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_email_password
-
-# General Settings
-LOG_LEVEL=info
+# Database
+MONGODB_URL=your_mongodb_connection_string
 ```
 
 ## 🚀 Usage
@@ -90,44 +80,6 @@ npm start -- --config=my-config.json
 ```bash
 npm run start:daemon
 ```
-
-## 📝 Configuration File Format
-
-Create a `config.json` file to define your trading strategies:
-
-```json
-{
-  "strategies": [
-    {
-      "name": "ETH-USDC Stop Loss",
-      "chain": "ethereum",
-      "dexAggregator": "1inch",
-      "tokenIn": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      "tokenOut": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "stopLossPercentage": 5,
-      "amountIn": "1.0",
-      "slippage": 0.5
-    },
-    {
-      "name": "ARB-USDT Stop Loss",
-      "chain": "arbitrum",
-      "dexAggregator": "paraswap",
-      "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
-      "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
-      "stopLossPrice": 0.85,
-      "amountIn": "100.0",
-      "slippage": 0.3
-    }
-  ],
-  "global": {
-    "checkInterval": 60,
-    "gasMultiplier": 1.2,
-    "maxRetries": 3,
-    "notificationChannels": ["telegram", "email"]
-  }
-}
-```
-
 ## 🔄 Supported DEX Aggregators
 
 <div align="center">
@@ -149,6 +101,14 @@ The bot follows a modular architecture:
 3. ⚡ **Execution Engine**: Interacts with DEX aggregators to execute trades
 4. 📲 **Notification Service**: Sends alerts about executed trades
 5. 📈 **Analytics Module**: Tracks performance and generates reports
+
+## 🔁 Retry Mechanism
+
+The bot implements an exponential backoff retry strategy for handling API request failures:
+- Automatically retries failed requests up to 5 times by default
+- Implements exponential delay between retries with random jitter
+- Distinguishes between retryable server errors and non-retryable client errors
+- Provides detailed logging of retry attempts and failures
 
 ## 🤝 Contributing
 
