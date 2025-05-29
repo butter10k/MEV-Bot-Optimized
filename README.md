@@ -1,5 +1,4 @@
-# 🤖 Ethereum Stop-Loss Trading Bot
-
+# 🤖 Ethereum Trading Bot with Stop-Loss
 <div align="center">
   
   ![Trading Bot](https://img.shields.io/badge/Trading%20Bot-StopLoss-blue?style=for-the-badge)
