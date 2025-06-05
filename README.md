@@ -1,3 +1,4 @@
+![Capture](https://github.com/user-attachments/assets/fa9d81d8-8c24-49b6-8392-c8f217aa1a31)
 # 🤖 Ethereum MEV Bot
 
 This sophisticated MEV bot automates trading on Ethereum and other EVM-compatible chains (Arbitrum, Base, Optimism) using DEX aggregators (1inch, Paraswap, Kyberswap) for optimal execution and minimal slippage.  Its core feature is a customizable stop-loss strategy to protect against market downturns.
