@@ -1,135 +1,97 @@
-# 🤖 Ethereum Trading Bot with Stop-Loss
-<div align="center">
-  
-  ![Trading Bot](https://img.shields.io/badge/Trading%20Bot-StopLoss-blue?style=for-the-badge)
-  ![Chains](https://img.shields.io/badge/Chains-Ethereum%20|%20Arbitrum%20|%20Base%20|%20Optimism-green?style=for-the-badge)
-  ![DEX Aggregators](https://img.shields.io/badge/DEX%20Aggregators-1inch%20|%20ParaSwap%20|%20KyberSwap-orange?style=for-the-badge)
+![Capture](https://github.com/user-attachments/assets/fa9d81d8-8c24-49b6-8392-c8f217aa1a31)
+# 🤖 Ethereum MEV Bot
 
-  <p>A professional trading bot designed to execute stop-loss strategies across multiple EVM-compatible chains using leading DEX aggregator APIs.</p>
-  
-</div>
+This sophisticated MEV bot automates trading on Ethereum and other EVM-compatible chains (Arbitrum, Base, Optimism) using DEX aggregators (1inch, Paraswap, Kyberswap) for optimal execution and minimal slippage.  Its core feature is a customizable stop-loss strategy to protect against market downturns.
 
-## 📋 Overview
+## Features
 
-This StopLoss Trading Bot monitors token prices across multiple chains and automatically executes trades when predefined stop-loss conditions are met. By leveraging DEX aggregators (1inch, ParaSwap, and KyberSwap), the bot ensures optimal execution with minimal slippage.
+* **Multi-Chain Support:** Ethereum, Arbitrum, Base, Optimism
+* **DEX Aggregation:** 1inch, Paraswap, Kyberswap
+* **Customizable Stop-Loss:** Percentage-based or fixed-price triggers
+* **Gas Optimization:** Intelligent gas management across networks
+* **Secure:** Private keys remain local
+* **Notifications:** Email, Telegram, Discord (optional)
+* **Performance Analytics:** Detailed trading reports
+* **Failover Mechanisms:** Automatic retries and fallback options
 
-## ✨ Features
+## Prerequisites
 
-- 🌐 **Multi-Chain Support**: Trade on Ethereum, Arbitrum, Base, and Optimism networks
-- 🔄 **Multiple DEX Aggregators**: Use 1inch, ParaSwap, and KyberSwap for best execution prices
-- 📉 **Customizable Stop-Loss Strategies**: Set percentage-based or fixed-price stop-loss triggers
-- ⛽ **Gas Optimization**: Intelligent gas price management across different networks
-- 🔒 **Wallet Security**: Private keys never leave your local environment
-- 📱 **Notification System**: Receive alerts via email, Telegram, or Discord
-- 📊 **Performance Analytics**: Track your trading performance with detailed reports
-- 🔁 **Failover Mechanisms**: Automatic retry and fallback options if a DEX aggregator fails
+* Node.js (v16+)
+* Ethereum wallet and private key
+* Sufficient ETH for gas on each chain
+* API keys for notification services (optional)
 
-## 🔧 Prerequisites
-
-- Node.js (v16 or higher)
-- Ethereum wallet with private key
-- Sufficient ETH for gas on each supported chain
-- API keys for notification services (optional)
-
-## 📦 Installation
+## Installation
 
 ```bash
-git clone https://github.com/butter1011/Eth-TradingBot-Stop-loss.git
-cd Eth-TradingBot-Stop-loss
+git clone https://github.com/butter1011/Ethereum-MEV-Bot.git
+cd Ethereum-MEV-Bot
 npm install
 ```
 
-## ⚙️ Configuration
+## Configuration
 
-Create a `.env` file in the root directory with the following variables:
+Create a `.env` file in the root directory:
 
 ```
-# Wallet Configuration
 PRIVATE_KEY=your_private_key_here
-
-# API Endpoints
 INCH_API_URL=your_1inch_api_url
-
-# RPC Endpoints
 ETH_RPC_URL=https://mainnet.infura.io/v3/your_infura_key
 ARBITRUM_RPC_URL=https://arb1.arbitrum.io/rpc
 BASE_RPC_URL=https://mainnet.base.org
 OPTIMISM_RPC_URL=https://mainnet.optimism.io
-
-# Database
 MONGODB_URL=your_mongodb_connection_string
 ```
 
-## 🚀 Usage
-
-### Basic Start
+## Usage
 
 ```bash
 npm start
 ```
-## 🔄 Supported DEX Aggregators
 
-<div align="center">
+## Supported DEX Aggregators
 
 | Aggregator | Chains Supported |
-|:----------:|:----------------:|
+|---|---|
 | 1inch | Ethereum, Arbitrum, Base, Optimism |
-| ParaSwap | Ethereum, Arbitrum, Optimism |
-| KyberSwap | Ethereum, Arbitrum, Base, Optimism |
+| Paraswap | Ethereum, Arbitrum, Optimism |
+| Kyberswap | Ethereum, Arbitrum, Base, Optimism |
 
-</div>
 
-## 🏗️ Architecture
+## Architecture
 
-The bot follows a modular architecture:
+1. **Price Monitor:** Tracks token prices.
+2. **Strategy Evaluator:** Checks stop-loss conditions.
+3. **Execution Engine:** Executes trades via DEX aggregators.
+4. **Notification Service:** Sends trade alerts.
+5. **Analytics Module:** Generates performance reports.
 
-1. 📊 **Price Monitor**: Continuously checks token prices across chains
-2. 🧠 **Strategy Evaluator**: Determines if stop-loss conditions are met
-3. ⚡ **Execution Engine**: Interacts with DEX aggregators to execute trades
-4. 📲 **Notification Service**: Sends alerts about executed trades
-5. 📈 **Analytics Module**: Tracks performance and generates reports
+## Retry Mechanism
 
-## 🔁 Retry Mechanism
+The bot uses an exponential backoff retry strategy with jitter for API request failures, retrying up to 5 times.
 
-The bot implements an exponential backoff retry strategy for handling API request failures:
-- Automatically retries failed requests up to 5 times by default
-- Implements exponential delay between retries with random jitter
-- Distinguishes between retryable server errors and non-retryable client errors
-- Provides detailed logging of retry attempts and failures
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Fork the repository, create a feature branch, commit changes, push to the branch, and open a pull request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## License
 
-## 📜 License
+MIT License. See the [LICENSE](LICENSE) file.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Disclaimer
 
-## ⚠️ Disclaimer
+This software is for educational purposes only. Use at your own risk.  The creators are not liable for any financial losses.  Test thoroughly with small amounts before using significant capital.
 
-This software is for educational purposes only. Use at your own risk. The creators are not responsible for any financial losses incurred through the use of this bot. Always test thoroughly with small amounts before deploying with significant capital.
+## Acknowledgements
 
-## 🙏 Acknowledgements
+* 1inch API
+* Paraswap API
+* Kyberswap API
+* Ethers.js
+* Web3.js
 
-- [1inch API](https://docs.1inch.io/)
-- [ParaSwap API](https://developers.paraswap.network/)
-- [KyberSwap API](https://docs.kyberswap.com/)
-- [Ethers.js](https://docs.ethers.io/)
-- [Web3.js](https://web3js.readthedocs.io/)
+## Contact
 
-<div align="center">
-  <img src="https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F%20by-Developers-blue?style=for-the-badge" alt="Made with love">
-</div>
-
-## 📫 Contact
-
-Feel free to reach out if you have any questions or suggestions:
-
-- Email: [ruizsalvador951011@gmail.com](mailto:ruizsalvador951011@gmail.com)
-- Telegram: [@k9h_butter](https://t.me/k9h_butter)
+* Email: ruizsalvador951011@gmail.com
+* Telegram: [@k9h_butter](https://t.me/k9h_butter)
