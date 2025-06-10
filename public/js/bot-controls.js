@@ -1,6 +1,7 @@
 // Bot control functions
 let bot = new TradingBot();
 
+// Start the bot
 function startBot() {
   const stopLossPrice = document.getElementById("stopLoss").value;
   const initialAmount = document.getElementById("initialETH").value;
@@ -49,6 +50,7 @@ function startBot() {
   }
 }
 
+// Finish the bot
 async function stopBot() {
   bot.stop();
 
