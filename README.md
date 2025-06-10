@@ -90,8 +90,3 @@ This software is for educational purposes only. Use at your own risk.  The creat
 * Kyberswap API
 * Ethers.js
 * Web3.js
-
-## Contact
-
-* Email: ruizsalvador951011@gmail.com
-* Telegram: [@k9h_butter](https://t.me/k9h_butter)
