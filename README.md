@@ -1,90 +1,102 @@
-![Capture](https://github.com/user-attachments/assets/fa9d81d8-8c24-49b6-8392-c8f217aa1a31)
-This sophisticated MEV bot automates trading on Ethereum and other EVM-compatible chains (Arbitrum, Base, Optimism) using DEX aggregators (1inch, Paraswap, Kyberswap) for optimal execution and minimal slippage.  Its core feature is a customizable stop-loss strategy to protect against market downturns.
+# <h1>Solana Ultra-Fast Token Sniper Bot on Raydium & Pumpfun (Rust) </h1>
 
-## Features
+## Overview
 
-* **Multi-Chain Support:** Ethereum, Arbitrum, Base, Optimism
-* **DEX Aggregation:** 1inch, Paraswap, Kyberswap
-* **Customizable Stop-Loss:** Percentage-based or fixed-price triggers
-* **Gas Optimization:** Intelligent gas management across networks
-* **Secure:** Private keys remain local
-* **Notifications:** Email, Telegram, Discord (optional)
-* **Performance Analytics:** Detailed trading reports
-* **Failover Mechanisms:** Automatic retries and fallback options
+Introducing the **Solana Ultra-Fast Token Sniper Bot**, a high-performance **Rust-based** bot engineered to snipe newly launched tokens on **Raydium** and **Pumpfun** at unparalleled speeds. Designed for precision and efficiency, this sniper bot leverages **low-latency execution, gRPC data feeds, and MEV optimization** to give traders an edge in volatile markets.
 
-## Prerequisites
+## Key Features
 
-* Node.js (v16+)
-* Ethereum wallet and private key
-* Sufficient ETH for gas on each chain
-* API keys for notification services (optional)
+### 🚀 Speed & Efficiency
+- **Real-Time Token Detection**: Instantly detects new token listings on Raydium and Pump.fun.
+- **Ultra-Low-Latency Execution**: Uses **Jito bundles and gRPC streaming** for near-instant transactions.
+- **Optimized Rust Performance**: Memory-safe, concurrency-efficient architecture for **lightning-fast trades**.
 
-## Installation
+### 🔒 Security & Reliability
+- **Private Key Protection**: Does not expose private keys in logs or memory.
+- **Block Malicious Wallets**: Supports a blacklist feature to avoid frontrunning wallets.
+- **Custom Slippage & Risk Controls**: Configurable slippage, auto-sell, and stop-loss functions.
 
-```bash
-git clone https://github.com/butter1011/Ethereum-MEV-Bot.git
-cd Ethereum-MEV-Bot
-npm install
+### 📊 Advanced Trading Strategies
+- **Dynamic Buy & Sell Triggers**: Automates purchases & sales based on market trends.
+- **Volume-Based Execution**: Responds to large transactions to follow whale movements.
+- **Auto-Sell Protection**: Ensures exit from positions within a defined time frame.
+
+### 🛠️ Deep Integration with Solana Ecosystem
+- **Helius & Yellowstone gRPC Support**: Connects to **multiple data feeds** for real-time insights.
+- **Jito Block Engine**: Enhances transaction confirmation speed using **bundled transactions**.
+- **DEX Compatibility**: Works seamlessly with **Raydium, Pump.fun, Meteora, and Orca**.
+
+---
+
+## 📁 Directory Structure
+
+```plaintext
+src/
+├── core/
+│   ├── token.rs        # Token definitions and handling
+│   ├── tx.rs           # Transaction processing & execution
+│
+├── engine/
+│   ├── swap.rs         # Buy/Sell functionalities across DEXs
+│   ├── monitor/        # Token monitoring & RPC parsing
+│   │   ├── helius.rs       # Helius gRPC for transaction listening
+│   │   ├── yellowstone.rs  # Yellowstone gRPC for real-time updates
+│
+├── dex/
+│   ├── pump_fun.rs     # Pump.fun integration
+│   ├── raydium.rs      # Raydium integration
+│   ├── meteora.rs      # Meteora integration
+│   ├── orca.rs         # Orca integration
+│
+├── services/
+│   ├── jito.rs         # Jito for fast transaction inclusion
+│   ├── nextblock.rs    # Alternative fast transaction confirmation service
+│
+├── common/
+│   ├── logger.rs       # Structured logging for debugging
+│   ├── utils.rs        # Utility functions used across the project
+│
+├── lib.rs
+└── main.rs
+
 ```
+---
 
-## Configuration
+### 🎯 Trading Strategy
 
-Create a `.env` file in the root directory:
+- **Buy Entry:** Executes a purchase when a $1,000+ token buy is detected.
+- **Sell Exit:** Triggers a sell when a $300+ token sale is detected.
+- **Time-Limit Protection:** If a trade remains open for more than 60 seconds, an auto-sell is initiated.
+- **Customizable Parameters:** Modify buy/sell thresholds & time-frame to fit personal strategy.
 
-```
+### 🛠️ How to Run
+1. Configure Environment Variables
+```plaintext
 PRIVATE_KEY=your_private_key_here
-INCH_API_URL=your_1inch_api_url
-ETH_RPC_URL=https://mainnet.infura.io/v3/your_infura_key
-ARBITRUM_RPC_URL=https://arb1.arbitrum.io/rpc
-BASE_RPC_URL=https://mainnet.base.org
-OPTIMISM_RPC_URL=https://mainnet.optimism.io
-MONGODB_URL=your_mongodb_connection_string
+RPC_HTTPS=https://mainnet.helius-rpc.com/?api-key=your_api_key_here
+RPC_WSS=wss://atlas-mainnet.helius-rpc.com/?api-key=your_api_key_here
+DEVNET_RPC_HTTPS=https://devnet.helius-rpc.com/?api-key=your_api_key_here
+RAYDIUM_LPV4=675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
+SLIPPAGE=10
+JITO_BLOCK_ENGINE_URL=https://ny.mainnet.block-engine.jito.wtf
+JITO_TIP_STREAM_URL=ws://bundles-api-rest.jito.wtf/api/v1/bundles/tip_stream
+JITO_TIP_PERCENTILE=50
+YELLOWSTONE_RPC_HTTP=http://elite.rpc.solanavibestation.com/?api_key=your_api_key_here
+YELLOWSTONE_RPC_WSS=ws://elite.rpc.solanavibestation.com/?api_key=your_api_key_here
+JITO_TIP_VALUE=0.004
+BUY_THRESHOLD=1000
+SELL_THRESHOLD=300
+TIME_EXCEED=60
 ```
-
-## Usage
-
-```bash
-npm start
+2. Add the wallet address you want to block on a new line and save the file.
 ```
+0x1234567890abcdef1234567890abcdef12345678
+0xabcdef1234567890abcdef1234567890abcdef12
+```
+3. Run
+ ```
+rustc main.rs
+.\main.exe
+```
+---
 
-## Supported DEX Aggregators
-
-| Aggregator | Chains Supported |
-|---|---|
-| 1inch | Ethereum, Arbitrum, Base, Optimism |
-| Paraswap | Ethereum, Arbitrum, Optimism |
-| Kyberswap | Ethereum, Arbitrum, Base, Optimism |
-
-
-## Architecture
-
-1. **Price Monitor:** Tracks token prices.
-2. **Strategy Evaluator:** Checks stop-loss conditions.
-3. **Execution Engine:** Executes trades via DEX aggregators.
-4. **Notification Service:** Sends trade alerts.
-5. **Analytics Module:** Generates performance reports.
-
-## Retry Mechanism
-
-The bot uses an exponential backoff retry strategy with jitter for API request failures, retrying up to 5 times.
-
-
-## Contributing
-
-Fork the repository, create a feature branch, commit changes, push to the branch, and open a pull request.
-
-## License
-
-MIT License. See the [LICENSE](LICENSE) file.
-
-## Disclaimer
-
-This software is for educational purposes only. Use at your own risk.  The creators are not liable for any financial losses.  Test thoroughly with small amounts before using significant capital.
-
-## Acknowledgements
-
-* 1inch API
-* Paraswap API
-* Kyberswap API
-* Ethers.js
-* Web3.js
