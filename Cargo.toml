@@ -1,4 +1,93 @@
 [package]
 name = "raydium-pump-snipe-bot"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+
+# Performance optimizations
+[profile.release]
+opt-level = 3          # Maximum optimization
+debug = false          # No debug info in release
+strip = true           # Strip symbols
+lto = true            # Link-time optimization
+codegen-units = 1      # Better optimization but slower compile
+panic = "abort"        # Faster panic handling
+
+[profile.dev]
+opt-level = 1          # Some optimization for dev builds
+
+[dependencies]
+# Core async runtime
+tokio = { version = "1.35", features = ["full", "tracing"] }
+tokio-tungstenite = "0.20"
+tokio-util = "0.7"
+
+# Solana core
+solana-sdk = "1.17"
+solana-client = "1.17"
+solana-rpc-client = "1.17"
+solana-rpc-client-api = "1.17"
+solana-account-decoder = "1.17"
+solana-transaction-status = "1.17"
+
+# SPL Token support  
+spl-token = "4.0"
+spl-associated-token-account = "2.2"
+anchor-lang = "0.29"
+
+# Raydium AMM
+raydium-amm = "0.1"
+
+# Jito support
+jito-json-rpc-client = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+borsh = "0.10"
+borsh-derive = "0.10"
+
+# Error handling and utilities
+anyhow = "1.0"
+thiserror = "1.0"
+dotenv = "0.15"
+
+# Networking and HTTP
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+tungstenite = "0.20"
+url = "2.4"
+
+# Concurrency and data structures
+dashmap = "5.5"          # High-performance concurrent HashMap
+parking_lot = "0.12"     # Faster mutexes
+crossbeam = "0.8"        # Lock-free data structures
+rayon = "1.8"            # Data parallelism
+
+# Time and math
+chrono = { version = "0.4", features = ["serde"] }
+rust_decimal = "1.33"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+log = "0.4"
+
+# Memory optimization
+jemallocator = "0.5"     # Better memory allocator
+
+# WebSocket optimizations
+fastwebsockets = "0.6"   # High-performance WebSocket client
+
+# Base58 and cryptography
+bs58 = "0.5"
+ed25519-dalek = "2.0"
+
+# Additional performance dependencies
+futures = "0.3"
+futures-util = "0.3"
+bincode = "1.3"
+base64 = "0.21"
+fastrand = "2.0"
+
+# Cache and LRU optimization
+lru = "0.12"
+moka = { version = "0.12", features = ["future"] }

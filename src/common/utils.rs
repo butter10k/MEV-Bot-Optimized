@@ -1,4 +1,5 @@
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use solana_sdk::{commitment_config::CommitmentConfig, signature::Keypair};
 use std::{env, sync::Arc};
 
@@ -7,6 +8,27 @@ pub struct AppState {
     pub rpc_client: Arc<solana_client::rpc_client::RpcClient>,
     pub rpc_nonblocking_client: Arc<solana_client::nonblocking::rpc_client::RpcClient>,
     pub wallet: Arc<Keypair>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum SwapDirection {
+    Buy,
+    Sell,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum SwapInType {
+    ExactIn,  // Specify exact input amount
+    ExactOut, // Specify exact output amount
+}
+
+#[derive(Debug, Clone)]
+pub struct SwapConfig {
+    pub swap_direction: SwapDirection,
+    pub amount: u64,
+    pub slippage: u64,
+    pub use_jito: bool,
+    pub swap_in_type: SwapInType,
 }
 
 pub fn import_env_var(key: &str) -> String {
