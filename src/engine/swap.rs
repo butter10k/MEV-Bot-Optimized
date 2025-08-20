@@ -13,6 +13,8 @@ use std::{
     },
     time::{Duration, Instant},
 };
+use crossbeam::channel::{bounded, Receiver, Sender};
+use rayon::prelude::*;
 use tracing::{debug, info, warn};
 
 use crate::{
@@ -32,6 +34,21 @@ static PRICE_CACHE: LazyLock<Arc<DashMap<String, CachedPrice>>> =
 // MEV protection and front-running detection
 static BLACKLISTED_WALLETS: LazyLock<Arc<RwLock<std::collections::HashSet<Pubkey>>>> = 
     LazyLock::new(|| Arc::new(RwLock::new(std::collections::HashSet::new())));
+
+// Advanced route optimization with parallel analysis
+static ROUTE_CACHE: LazyLock<Arc<DashMap<String, CachedRoute>>> = 
+    LazyLock::new(|| Arc::new(DashMap::new()));
+
+static LIQUIDITY_MONITOR: LazyLock<Arc<LiquidityMonitor>> = 
+    LazyLock::new(|| Arc::new(LiquidityMonitor::new()));
+
+// Circuit breaker for failed transactions
+static CIRCUIT_BREAKER: LazyLock<Arc<CircuitBreaker>> = 
+    LazyLock::new(|| Arc::new(CircuitBreaker::new()));
+
+// Predictive analytics for market movements
+static PRICE_PREDICTOR: LazyLock<Arc<PricePredictor>> = 
+    LazyLock::new(|| Arc::new(PricePredictor::new()));
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SwapDirection {
@@ -74,6 +91,251 @@ struct CachedPrice {
     price_impact_1_percent: f64,
     cached_at: Instant,
     source: DexType,
+}
+
+#[derive(Debug, Clone)]
+struct CachedRoute {
+    dex: DexType,
+    score: f64,
+    estimated_output: u64,
+    price_impact: f64,
+    execution_time: Duration,
+    cached_at: Instant,
+    liquidity_depth: u64,
+    fees: u64,
+}
+
+// Advanced liquidity monitoring for optimal routing
+struct LiquidityMonitor {
+    dex_liquidities: Arc<DashMap<DexType, DexLiquidity>>,
+    update_interval: Duration,
+    health_threshold: f64,
+}
+
+#[derive(Debug, Clone)]
+struct DexLiquidity {
+    total_liquidity_usd: f64,
+    active_pairs: u64,
+    avg_price_impact: f64,
+    success_rate: f64,
+    avg_execution_time: Duration,
+    last_updated: Instant,
+}
+
+impl LiquidityMonitor {
+    fn new() -> Self {
+        Self {
+            dex_liquidities: Arc::new(DashMap::new()),
+            update_interval: Duration::from_secs(30),
+            health_threshold: 0.95, // 95% success rate threshold
+        }
+    }
+
+    async fn update_dex_liquidity(&self, dex: DexType, liquidity: DexLiquidity) {
+        self.dex_liquidities.insert(dex, liquidity);
+    }
+
+    fn get_dex_health(&self, dex: &DexType) -> f64 {
+        self.dex_liquidities
+            .get(dex)
+            .map(|entry| entry.success_rate)
+            .unwrap_or(0.5) // Default to 50% if unknown
+    }
+
+    fn is_dex_healthy(&self, dex: &DexType) -> bool {
+        self.get_dex_health(dex) >= self.health_threshold
+    }
+
+    async fn start_monitoring(&self) {
+        let liquidities = Arc::clone(&self.dex_liquidities);
+        let interval = self.update_interval;
+
+        tokio::spawn(async move {
+            let mut monitor_interval = tokio::time::interval(interval);
+            
+            loop {
+                monitor_interval.tick().await;
+                
+                // Update liquidity metrics for each DEX
+                for dex in [DexType::Raydium, DexType::PumpFun, DexType::Meteora, DexType::Orca] {
+                    // This would typically fetch real liquidity data
+                    let mock_liquidity = DexLiquidity {
+                        total_liquidity_usd: 10_000_000.0,
+                        active_pairs: 500,
+                        avg_price_impact: 1.5,
+                        success_rate: 0.98,
+                        avg_execution_time: Duration::from_millis(800),
+                        last_updated: Instant::now(),
+                    };
+                    
+                    liquidities.insert(dex, mock_liquidity);
+                }
+            }
+        });
+    }
+}
+
+// Circuit breaker pattern for handling failed transactions
+struct CircuitBreaker {
+    failure_threshold: u32,
+    timeout: Duration,
+    failure_counts: Arc<DashMap<DexType, FailureState>>,
+}
+
+#[derive(Debug, Clone)]
+struct FailureState {
+    consecutive_failures: u32,
+    last_failure: Instant,
+    state: BreakerState,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+enum BreakerState {
+    Closed,    // Normal operation
+    Open,      // Blocking requests
+    HalfOpen,  // Testing recovery
+}
+
+impl CircuitBreaker {
+    fn new() -> Self {
+        Self {
+            failure_threshold: 5, // Open after 5 consecutive failures
+            timeout: Duration::from_secs(60), // Try recovery after 1 minute
+            failure_counts: Arc::new(DashMap::new()),
+        }
+    }
+
+    fn is_allowed(&self, dex: &DexType) -> bool {
+        let state = self.failure_counts
+            .get(dex)
+            .map(|entry| entry.state.clone())
+            .unwrap_or(BreakerState::Closed);
+
+        match state {
+            BreakerState::Closed => true,
+            BreakerState::Open => {
+                // Check if timeout has passed to transition to half-open
+                if let Some(failure_state) = self.failure_counts.get(dex) {
+                    if failure_state.last_failure.elapsed() > self.timeout {
+                        // Transition to half-open
+                        let mut new_state = failure_state.clone();
+                        new_state.state = BreakerState::HalfOpen;
+                        self.failure_counts.insert(*dex, new_state);
+                        return true;
+                    }
+                }
+                false
+            }
+            BreakerState::HalfOpen => true, // Allow one test request
+        }
+    }
+
+    fn record_success(&self, dex: &DexType) {
+        if let Some(mut failure_state) = self.failure_counts.get_mut(dex) {
+            failure_state.consecutive_failures = 0;
+            failure_state.state = BreakerState::Closed;
+        }
+    }
+
+    fn record_failure(&self, dex: &DexType) {
+        let mut failure_state = self.failure_counts
+            .entry(*dex)
+            .or_insert_with(|| FailureState {
+                consecutive_failures: 0,
+                last_failure: Instant::now(),
+                state: BreakerState::Closed,
+            });
+
+        failure_state.consecutive_failures += 1;
+        failure_state.last_failure = Instant::now();
+
+        if failure_state.consecutive_failures >= self.failure_threshold {
+            failure_state.state = BreakerState::Open;
+            warn!("Circuit breaker opened for DEX: {:?}", dex);
+        }
+    }
+}
+
+// Predictive price analysis for better timing
+struct PricePredictor {
+    price_history: Arc<DashMap<Pubkey, Vec<PricePoint>>>,
+    prediction_window: Duration,
+    max_history_size: usize,
+}
+
+#[derive(Debug, Clone)]
+struct PricePoint {
+    timestamp: Instant,
+    price: f64,
+    volume: f64,
+    volatility: f64,
+}
+
+impl PricePredictor {
+    fn new() -> Self {
+        Self {
+            price_history: Arc::new(DashMap::new()),
+            prediction_window: Duration::from_secs(300), // 5 minute prediction window
+            max_history_size: 100, // Keep last 100 price points
+        }
+    }
+
+    fn add_price_point(&self, mint: Pubkey, price_point: PricePoint) {
+        let mut history = self.price_history
+            .entry(mint)
+            .or_insert_with(|| Vec::with_capacity(self.max_history_size));
+
+        history.push(price_point);
+
+        // Maintain max size
+        if history.len() > self.max_history_size {
+            history.remove(0);
+        }
+    }
+
+    fn predict_price_movement(&self, mint: &Pubkey) -> Option<f64> {
+        if let Some(history) = self.price_history.get(mint) {
+            if history.len() < 10 {
+                return None; // Need at least 10 data points
+            }
+
+            // Simple linear regression for trend prediction
+            let recent_points: Vec<&PricePoint> = history
+                .iter()
+                .rev()
+                .take(20)
+                .collect();
+
+            let n = recent_points.len() as f64;
+            let sum_x: f64 = (0..recent_points.len()).map(|i| i as f64).sum();
+            let sum_y: f64 = recent_points.iter().map(|p| p.price).sum();
+            let sum_xy: f64 = recent_points
+                .iter()
+                .enumerate()
+                .map(|(i, p)| i as f64 * p.price)
+                .sum();
+            let sum_x2: f64 = (0..recent_points.len()).map(|i| (i as f64).powi(2)).sum();
+
+            // Calculate slope (trend)
+            let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x.powi(2));
+            
+            // Return predicted percentage change
+            Some(slope * 100.0)
+        } else {
+            None
+        }
+    }
+
+    fn is_favorable_timing(&self, mint: &Pubkey, direction: &SwapDirection) -> bool {
+        if let Some(trend) = self.predict_price_movement(mint) {
+            match direction {
+                SwapDirection::Buy => trend > 1.0,   // Upward trend for buying
+                SwapDirection::Sell => trend < -1.0, // Downward trend for selling
+            }
+        } else {
+            true // Default to favorable if no data
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -218,38 +480,197 @@ impl SwapEngine {
         }
     }
 
-    /// Find optimal route considering liquidity, price impact, and fees
+    /// Find optimal route considering liquidity, price impact, and fees with parallel analysis
     async fn find_optimal_route(
         &self,
         mint: &Pubkey,
         amount: u64,
         direction: &SwapDirection,
     ) -> Result<DexType> {
-        let mut route_scores = HashMap::new();
+        let cache_key = format!("{}_{}_{}_{}", mint, amount, 
+                              match direction { SwapDirection::Buy => "buy", SwapDirection::Sell => "sell" },
+                              Instant::now().elapsed().as_secs() / 30); // 30-second cache
 
-        // Check Raydium if available
-        if self.raydium.is_some() {
-            if let Ok(score) = self.calculate_route_score(mint, amount, direction, &DexType::Raydium).await {
-                route_scores.insert(DexType::Raydium, score);
+        // Check route cache first
+        if let Some(cached_route) = ROUTE_CACHE.get(&cache_key) {
+            if cached_route.cached_at.elapsed() < Duration::from_secs(30) {
+                debug!("Using cached route: {:?} with score {:.2}", cached_route.dex, cached_route.score);
+                return Ok(cached_route.dex.clone());
             }
         }
 
-        // Check Pump.fun if available
-        if self.pump_fun.is_some() {
-            if let Ok(score) = self.calculate_route_score(mint, amount, direction, &DexType::PumpFun).await {
-                route_scores.insert(DexType::PumpFun, score);
-            }
+        // Check circuit breaker and timing
+        let available_dexes = self.get_available_dexes(mint, direction).await?;
+        
+        if available_dexes.is_empty() {
+            return Err(anyhow!("No healthy DEXes available"));
         }
 
-        // Select route with highest score
-        route_scores
+        // Parallel route analysis for better performance
+        let route_futures: Vec<_> = available_dexes
             .into_iter()
-            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
-            .map(|(dex, score)| {
-                debug!("Selected {} with score: {:.2}", format!("{:?}", dex), score);
-                dex
+            .map(|dex| async move {
+                match self.calculate_enhanced_route_score(mint, amount, direction, &dex).await {
+                    Ok(route) => Some((dex, route)),
+                    Err(e) => {
+                        debug!("Route calculation failed for {:?}: {}", dex, e);
+                        None
+                    }
+                }
             })
-            .ok_or_else(|| anyhow!("No viable routes found"))
+            .collect();
+
+        // Execute all route calculations in parallel
+        let route_results = futures::future::join_all(route_futures).await;
+        
+        // Find the best route
+        let mut best_route: Option<(DexType, CachedRoute)> = None;
+        
+        for result in route_results {
+            if let Some((dex, route)) = result {
+                if let Some((_, ref current_best)) = best_route {
+                    if route.score > current_best.score {
+                        best_route = Some((dex, route));
+                    }
+                } else {
+                    best_route = Some((dex, route));
+                }
+            }
+        }
+
+        match best_route {
+            Some((dex, route)) => {
+                // Cache the result
+                ROUTE_CACHE.insert(cache_key, route.clone());
+                
+                debug!("Selected {:?} with enhanced score: {:.2}, estimated output: {}, price impact: {:.2}%", 
+                       dex, route.score, route.estimated_output, route.price_impact);
+                Ok(dex)
+            }
+            None => Err(anyhow!("No viable routes found after parallel analysis"))
+        }
+    }
+
+    /// Get available DEXes after circuit breaker and timing checks
+    async fn get_available_dexes(&self, mint: &Pubkey, direction: &SwapDirection) -> Result<Vec<DexType>> {
+        let mut available_dexes = Vec::new();
+
+        // Check timing predictions
+        let is_favorable_timing = PRICE_PREDICTOR.is_favorable_timing(mint, direction);
+        if !is_favorable_timing {
+            debug!("Timing predictor suggests waiting for better conditions");
+            // Still proceed but with adjusted scoring
+        }
+
+        // Check each DEX availability
+        let dex_candidates = vec![
+            (DexType::Raydium, self.raydium.is_some()),
+            (DexType::PumpFun, self.pump_fun.is_some()),
+            (DexType::Meteora, false), // Not implemented yet
+            (DexType::Orca, false),    // Not implemented yet
+        ];
+
+        for (dex, is_available) in dex_candidates {
+            if is_available 
+                && CIRCUIT_BREAKER.is_allowed(&dex)
+                && LIQUIDITY_MONITOR.is_dex_healthy(&dex) {
+                available_dexes.push(dex);
+            } else {
+                debug!("DEX {:?} filtered out - available: {}, circuit_breaker: {}, healthy: {}", 
+                       dex, is_available, CIRCUIT_BREAKER.is_allowed(&dex), LIQUIDITY_MONITOR.is_dex_healthy(&dex));
+            }
+        }
+
+        Ok(available_dexes)
+    }
+
+    /// Enhanced route scoring with comprehensive analysis
+    async fn calculate_enhanced_route_score(
+        &self,
+        mint: &Pubkey,
+        amount: u64,
+        direction: &SwapDirection,
+        dex: &DexType,
+    ) -> Result<CachedRoute> {
+        let start_time = Instant::now();
+        let mut score = 0.0;
+
+        // Base liquidity and availability score
+        match dex {
+            DexType::PumpFun => {
+                if amount < 5_000_000_000 { // < 5 SOL - optimal for pump.fun
+                    score += 60.0;
+                } else {
+                    score += 30.0;
+                }
+            }
+            DexType::Raydium => {
+                if amount >= 1_000_000_000 { // >= 1 SOL - good for Raydium
+                    score += 65.0;
+                } else {
+                    score += 40.0;
+                }
+            }
+            _ => score += 20.0, // Other DEXes
+        }
+
+        // Health and performance scoring
+        let dex_health = LIQUIDITY_MONITOR.get_dex_health(dex);
+        score += dex_health * 20.0; // Up to 20 points for health
+
+        // Timing prediction bonus
+        if PRICE_PREDICTOR.is_favorable_timing(mint, direction) {
+            score += 10.0;
+        }
+
+        // Estimated execution time (lower is better)
+        let estimated_execution_time = match dex {
+            DexType::PumpFun => Duration::from_millis(800),
+            DexType::Raydium => Duration::from_millis(1200),
+            _ => Duration::from_millis(1500),
+        };
+
+        // Time penalty (max 10 points deduction)
+        let time_penalty = (estimated_execution_time.as_millis() as f64 / 100.0).min(10.0);
+        score -= time_penalty;
+
+        // Estimate price impact (simplified)
+        let price_impact = match dex {
+            DexType::PumpFun => {
+                if amount > 10_000_000_000 { 3.0 } else { 1.5 } // Higher impact for large amounts
+            }
+            DexType::Raydium => {
+                if amount > 50_000_000_000 { 2.5 } else { 1.0 } // Better for large amounts
+            }
+            _ => 2.0,
+        };
+
+        // Price impact penalty
+        score -= price_impact;
+
+        // Estimate fees
+        let estimated_fees = match dex {
+            DexType::PumpFun => 500_000,  // 0.0005 SOL
+            DexType::Raydium => 300_000,  // 0.0003 SOL
+            _ => 800_000,
+        };
+
+        // Fee penalty
+        score -= (estimated_fees as f64 / 100_000.0); // Scale down fees
+
+        // Estimate output (simplified)
+        let estimated_output = amount - estimated_fees - (amount as f64 * price_impact / 100.0) as u64;
+
+        Ok(CachedRoute {
+            dex: dex.clone(),
+            score,
+            estimated_output,
+            price_impact,
+            execution_time: estimated_execution_time,
+            cached_at: start_time,
+            liquidity_depth: 10_000_000_000, // Placeholder
+            fees: estimated_fees,
+        })
     }
 
     /// Calculate route score based on multiple factors

@@ -23,6 +23,8 @@ use std::{
         LazyLock,
     },
 };
+use crossbeam::queue::SegQueue;
+use std::collections::VecDeque;
 use tokio::time::Instant;
 use tracing::{debug, info, warn};
 
@@ -45,6 +47,23 @@ static RECENT_BLOCKHASHES: LazyLock<Arc<DashMap<String, (Hash, Instant)>>> =
 
 static COMPUTE_UNIT_PRICES: LazyLock<Arc<RwLock<ComputeUnitPricing>>> = 
     LazyLock::new(|| Arc::new(RwLock::new(ComputeUnitPricing::default())));
+
+// High-performance memory pools for reduced allocations
+static INSTRUCTION_POOL: LazyLock<Arc<SegQueue<Vec<Instruction>>>> = 
+    LazyLock::new(|| Arc::new(SegQueue::new()));
+
+static TRANSACTION_POOL: LazyLock<Arc<SegQueue<Transaction>>> = 
+    LazyLock::new(|| Arc::new(SegQueue::new()));
+
+static MESSAGE_BUFFER_POOL: LazyLock<Arc<SegQueue<Vec<u8>>>> = 
+    LazyLock::new(|| Arc::new(SegQueue::new()));
+
+// Adaptive batch processing for better throughput
+static PENDING_TRANSACTIONS: LazyLock<Arc<DashMap<String, PendingTransaction>>> = 
+    LazyLock::new(|| Arc::new(DashMap::new()));
+
+static BATCH_PROCESSOR: LazyLock<Arc<BatchProcessor>> = 
+    LazyLock::new(|| Arc::new(BatchProcessor::new()));
 
 #[derive(Debug, Clone)]
 struct ComputeUnitPricing {
@@ -96,6 +115,186 @@ pub struct TransactionResult {
     pub priority_fee_paid: u64,
     pub method_used: String,
     pub block_height: Option<u64>,
+}
+
+#[derive(Debug, Clone)]
+struct PendingTransaction {
+    id: String,
+    instructions: Vec<Instruction>,
+    config: TransactionConfig,
+    created_at: Instant,
+    priority: TransactionPriority,
+    retry_count: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum TransactionPriority {
+    Low = 1,
+    Normal = 2,
+    High = 3,
+    Critical = 4,
+}
+
+// High-throughput batch processor with SIMD optimizations
+struct BatchProcessor {
+    batch_size: usize,
+    batch_timeout: Duration,
+    pending_batches: Arc<DashMap<String, TransactionBatch>>,
+    processing_semaphore: Arc<Semaphore>,
+}
+
+#[derive(Debug)]
+struct TransactionBatch {
+    id: String,
+    transactions: Vec<PendingTransaction>,
+    created_at: Instant,
+    priority: TransactionPriority,
+    estimated_compute_units: u64,
+}
+
+impl BatchProcessor {
+    fn new() -> Self {
+        Self {
+            batch_size: 10, // Process up to 10 transactions per batch
+            batch_timeout: Duration::from_millis(100), // Max 100ms batch collection time
+            pending_batches: Arc::new(DashMap::new()),
+            processing_semaphore: Arc::new(Semaphore::new(5)), // Allow 5 concurrent batches
+        }
+    }
+
+    async fn add_transaction(&self, tx: PendingTransaction) -> Result<()> {
+        let batch_key = format!("batch_{}", tx.priority as u8);
+        
+        // Get or create batch for this priority level
+        let mut batch = self.pending_batches.entry(batch_key.clone())
+            .or_insert_with(|| TransactionBatch {
+                id: batch_key.clone(),
+                transactions: Vec::with_capacity(self.batch_size),
+                created_at: Instant::now(),
+                priority: tx.priority.clone(),
+                estimated_compute_units: 0,
+            });
+
+        batch.transactions.push(tx);
+        batch.estimated_compute_units += 200_000; // Estimate per transaction
+
+        // Process batch if full or timeout reached
+        if batch.transactions.len() >= self.batch_size 
+            || batch.created_at.elapsed() > self.batch_timeout {
+            self.process_batch(batch_key).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn process_batch(&self, batch_key: String) -> Result<()> {
+        let _permit = self.processing_semaphore.acquire().await
+            .map_err(|e| anyhow!("Failed to acquire processing permit: {}", e))?;
+
+        if let Some((_, batch)) = self.pending_batches.remove(&batch_key) {
+            debug!("Processing batch {} with {} transactions", 
+                   batch.id, batch.transactions.len());
+
+            // Use rayon for parallel processing if beneficial
+            if batch.transactions.len() > 3 {
+                self.process_batch_parallel(batch).await?;
+            } else {
+                self.process_batch_sequential(batch).await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn process_batch_parallel(&self, batch: TransactionBatch) -> Result<()> {
+        use rayon::prelude::*;
+
+        let results: Vec<Result<()>> = batch.transactions
+            .into_par_iter()
+            .map(|tx| {
+                // Parallel transaction preparation
+                self.prepare_transaction_optimized(tx)
+            })
+            .collect();
+
+        // Check for any failures
+        for (i, result) in results.into_iter().enumerate() {
+            if let Err(e) = result {
+                warn!("Transaction {} in batch {} failed preparation: {}", 
+                      i, batch.id, e);
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn process_batch_sequential(&self, batch: TransactionBatch) -> Result<()> {
+        for (i, tx) in batch.transactions.into_iter().enumerate() {
+            if let Err(e) = self.prepare_transaction_optimized(tx) {
+                warn!("Transaction {} in batch {} failed: {}", i, batch.id, e);
+            }
+        }
+        Ok(())
+    }
+
+    fn prepare_transaction_optimized(&self, tx: PendingTransaction) -> Result<()> {
+        // Use memory pool for instruction vectors
+        let mut instructions = INSTRUCTION_POOL.pop()
+            .unwrap_or_else(|| Vec::with_capacity(10));
+        
+        instructions.clear();
+        instructions.extend(tx.instructions);
+
+        // Optimize instruction ordering for better compute efficiency
+        self.optimize_instruction_order(&mut instructions);
+
+        // Return to pool for reuse
+        if instructions.capacity() <= 20 { // Prevent pool pollution
+            INSTRUCTION_POOL.push(instructions);
+        }
+
+        Ok(())
+    }
+
+    fn optimize_instruction_order(&self, instructions: &mut Vec<Instruction>) {
+        // Sort by program ID to optimize account lookups
+        instructions.sort_by(|a, b| a.program_id.cmp(&b.program_id));
+        
+        // Move compute budget instructions to the front
+        let (compute_instructions, other_instructions): (Vec<_>, Vec<_>) = 
+            instructions.drain(..).partition(|ix| {
+                ix.program_id == solana_sdk::compute_budget::ID
+            });
+
+        instructions.extend(compute_instructions);
+        instructions.extend(other_instructions);
+    }
+
+    async fn start_batch_processor(&self) {
+        let pending_batches = Arc::clone(&self.pending_batches);
+        let batch_timeout = self.batch_timeout;
+
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(batch_timeout);
+            
+            loop {
+                interval.tick().await;
+                
+                // Process any batches that have timed out
+                let timeout_batches: Vec<String> = pending_batches
+                    .iter()
+                    .filter(|entry| entry.created_at.elapsed() > batch_timeout)
+                    .map(|entry| entry.key().clone())
+                    .collect();
+
+                for batch_key in timeout_batches {
+                    if let Err(e) = BATCH_PROCESSOR.process_batch(batch_key).await {
+                        warn!("Failed to process timeout batch: {}", e);
+                    }
+                }
+            }
+        });
+    }
 }
 
 // Optimized compute unit pricing

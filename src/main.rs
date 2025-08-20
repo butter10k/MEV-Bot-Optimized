@@ -2,6 +2,8 @@ use dotenv::dotenv;
 use raydium_pump_snipe_bot::{
     common::{
         logger::Logger,
+        performance::{start_performance_monitoring, log_performance_alert, AlertSeverity},
+        cache::initialize_cache_system,
         utils::{
             create_nonblocking_rpc_client, create_rpc_client, import_env_var, import_wallet,
             AppState, SwapConfig,
@@ -46,6 +48,14 @@ async fn main() -> anyhow::Result<()> {
     
     // Enhanced configuration loading with validation
     let config = load_and_validate_config(&logger).await?;
+    
+    // Initialize high-performance caching system
+    initialize_cache_system().await?;
+    info!("High-performance caching system initialized");
+    
+    // Start performance monitoring
+    start_performance_monitoring().await?;
+    info!("Performance monitoring system started");
     
     // Initialize connection pools and clients
     let app_state = initialize_connection_pools(&logger).await?;

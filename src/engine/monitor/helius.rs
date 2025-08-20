@@ -21,6 +21,8 @@ use tokio::{
 use tokio_tungstenite::{
     connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream,
 };
+use tokio::sync::{mpsc, Semaphore};
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 use tracing::{debug, error, info, warn};
 
 use crate::{
@@ -32,8 +34,20 @@ use crate::{
 static MESSAGE_COUNTER: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
 static RELEVANT_TX_COUNTER: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
 
-// Connection management
+// Enhanced connection management with pooling
 static CONNECTION_RETRY_COUNT: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
+static ACTIVE_CONNECTIONS: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(0));
+static CONNECTION_POOL_SIZE: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(4));
+
+// Connection pool for better throughput
+static CONNECTION_POOL: LazyLock<Arc<ConnectionPool>> = LazyLock::new(|| {
+    Arc::new(ConnectionPool::new(4))
+});
+
+// Adaptive backpressure control
+static BACKPRESSURE_SEMAPHORE: LazyLock<Arc<Semaphore>> = LazyLock::new(|| {
+    Arc::new(Semaphore::new(1000)) // Allow 1000 concurrent operations
+});
 
 // Enhanced transaction tracking with performance optimization
 static PROCESSED_TRANSACTIONS: LazyLock<Arc<DashMap<String, ProcessedTx>>> = 
@@ -59,6 +73,172 @@ enum TransactionType {
     LiquidityAdd,
     LiquidityRemove,
     Other,
+}
+
+// High-performance connection pool for WebSocket multiplexing
+struct ConnectionPool {
+    max_size: usize,
+    connections: Arc<RwLock<Vec<Arc<PooledConnection>>>>,
+    connection_factory: Box<dyn Fn() -> PooledConnection + Send + Sync>,
+    health_check_interval: Duration,
+}
+
+#[derive(Debug)]
+struct PooledConnection {
+    id: usize,
+    stream: Arc<RwLock<Option<WebSocketStream<MaybeTlsStream<TcpStream>>>>>,
+    last_used: Arc<RwLock<Instant>>,
+    is_healthy: Arc<AtomicBool>,
+    message_count: Arc<AtomicU64>,
+    error_count: Arc<AtomicU64>,
+}
+
+impl ConnectionPool {
+    fn new(max_size: usize) -> Self {
+        Self {
+            max_size,
+            connections: Arc::new(RwLock::new(Vec::new())),
+            connection_factory: Box::new(|| PooledConnection::new(0)),
+            health_check_interval: Duration::from_secs(30),
+        }
+    }
+
+    async fn get_connection(&self) -> Result<Arc<PooledConnection>> {
+        let connections = self.connections.read();
+        
+        // Find a healthy, available connection
+        for conn in connections.iter() {
+            if conn.is_healthy.load(Ordering::SeqCst) {
+                *conn.last_used.write() = Instant::now();
+                return Ok(Arc::clone(conn));
+            }
+        }
+        
+        drop(connections);
+        
+        // Create new connection if pool not full
+        let mut connections = self.connections.write();
+        if connections.len() < self.max_size {
+            let new_conn = Arc::new(PooledConnection::new(connections.len()));
+            connections.push(Arc::clone(&new_conn));
+            return Ok(new_conn);
+        }
+        
+        Err(anyhow!("Connection pool exhausted"))
+    }
+
+    async fn return_connection(&self, conn: Arc<PooledConnection>) {
+        // Connection is automatically returned when dropped
+        // Health check will clean up unhealthy connections
+    }
+
+    async fn start_health_check(&self) {
+        let connections = Arc::clone(&self.connections);
+        let interval = self.health_check_interval;
+        
+        tokio::spawn(async move {
+            let mut health_interval = tokio::time::interval(interval);
+            
+            loop {
+                health_interval.tick().await;
+                
+                let mut connections = connections.write();
+                connections.retain(|conn| {
+                    let is_healthy = conn.is_healthy.load(Ordering::SeqCst);
+                    let last_used = *conn.last_used.read();
+                    let is_stale = last_used.elapsed() > Duration::from_secs(300); // 5 minutes
+                    
+                    if !is_healthy || is_stale {
+                        debug!("Removing unhealthy/stale connection {}", conn.id);
+                        false
+                    } else {
+                        true
+                    }
+                });
+            }
+        });
+    }
+}
+
+impl PooledConnection {
+    fn new(id: usize) -> Self {
+        Self {
+            id,
+            stream: Arc::new(RwLock::new(None)),
+            last_used: Arc::new(RwLock::new(Instant::now())),
+            is_healthy: Arc::new(AtomicBool::new(true)),
+            message_count: Arc::new(AtomicU64::new(0)),
+            error_count: Arc::new(AtomicU64::new(0)),
+        }
+    }
+
+    async fn connect(&self, url: &str) -> Result<()> {
+        match connect_async(url).await {
+            Ok((ws_stream, _)) => {
+                *self.stream.write() = Some(ws_stream);
+                self.is_healthy.store(true, Ordering::SeqCst);
+                debug!("Connection {} established successfully", self.id);
+                Ok(())
+            }
+            Err(e) => {
+                self.is_healthy.store(false, Ordering::SeqCst);
+                self.error_count.fetch_add(1, Ordering::SeqCst);
+                Err(anyhow!("Failed to connect: {}", e))
+            }
+        }
+    }
+
+    async fn send_message(&self, message: Message) -> Result<()> {
+        let mut stream_guard = self.stream.write();
+        if let Some(ref mut stream) = *stream_guard {
+            match stream.send(message).await {
+                Ok(_) => {
+                    self.message_count.fetch_add(1, Ordering::SeqCst);
+                    *self.last_used.write() = Instant::now();
+                    Ok(())
+                }
+                Err(e) => {
+                    self.is_healthy.store(false, Ordering::SeqCst);
+                    self.error_count.fetch_add(1, Ordering::SeqCst);
+                    Err(anyhow!("Failed to send message: {}", e))
+                }
+            }
+        } else {
+            Err(anyhow!("Connection not established"))
+        }
+    }
+
+    async fn receive_message(&self) -> Result<Option<Message>> {
+        let mut stream_guard = self.stream.write();
+        if let Some(ref mut stream) = *stream_guard {
+            match timeout(Duration::from_secs(1), stream.next()).await {
+                Ok(Some(msg_result)) => {
+                    match msg_result {
+                        Ok(message) => {
+                            self.message_count.fetch_add(1, Ordering::SeqCst);
+                            *self.last_used.write() = Instant::now();
+                            Ok(Some(message))
+                        }
+                        Err(e) => {
+                            self.is_healthy.store(false, Ordering::SeqCst);
+                            self.error_count.fetch_add(1, Ordering::SeqCst);
+                            Err(anyhow!("WebSocket error: {}", e))
+                        }
+                    }
+                }
+                Ok(None) => {
+                    self.is_healthy.store(false, Ordering::SeqCst);
+                    Ok(None) // Stream ended
+                }
+                Err(_) => {
+                    // Timeout, but connection might still be healthy
+                    Ok(None)
+                }
+            }
+        } else {
+            Err(anyhow!("Connection not established"))
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
