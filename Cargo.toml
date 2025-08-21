@@ -89,6 +89,12 @@ mimalloc = { version = "0.1", optional = true }  # Alternative fast allocator
 # SIMD optimizations for numerical operations
 wide = "0.7"             # SIMD abstractions
 
+# Additional dependencies for advanced features
+moka = "0.12"            # High-performance caching
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8"             # Random number generation
+bincode = "1.3"          # Binary serialization
+
 [features]
 default = ["jemalloc"]
 jemalloc = ["jemallocator"]

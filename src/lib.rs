@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod common;
 pub mod core;
 pub mod dex;

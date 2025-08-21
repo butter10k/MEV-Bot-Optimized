@@ -1,15 +1,19 @@
 use dotenv::dotenv;
 use raydium_pump_snipe_bot::{
+    ai::{start_ai_system, start_whale_tracking},
     common::{
         logger::Logger,
         performance::{start_performance_monitoring, log_performance_alert, AlertSeverity},
         cache::initialize_cache_system,
+        risk_manager::start_risk_management,
         utils::{
             create_nonblocking_rpc_client, create_rpc_client, import_env_var, import_wallet,
             AppState, SwapConfig,
         },
     },
     engine::{
+        arbitrage::start_arbitrage_system,
+        mev_detector::start_mev_detection_system,
         monitor::{
             helius::{pumpfun_monitor, raydium_monitor, start_cleanup_task as start_helius_cleanup},
             yellowstone::{start_yellowstone_cleanup_task, YellowstoneMonitor},
@@ -56,6 +60,25 @@ async fn main() -> anyhow::Result<()> {
     // Start performance monitoring
     start_performance_monitoring().await?;
     info!("Performance monitoring system started");
+    
+    // Start risk management system
+    start_risk_management().await?;
+    info!("Risk management system started");
+    
+    // Start AI systems
+    start_ai_system().await?;
+    info!("AI sentiment analysis system started");
+    
+    start_whale_tracking().await?;
+    info!("Whale tracking system started");
+    
+    // Start MEV detection
+    start_mev_detection_system().await?;
+    info!("MEV detection system started");
+    
+    // Start arbitrage system
+    start_arbitrage_system().await?;
+    info!("Cross-DEX arbitrage system started");
     
     // Initialize connection pools and clients
     let app_state = initialize_connection_pools(&logger).await?;
