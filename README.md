@@ -1,102 +1,159 @@
-# <h1>Solana Ultra-Fast Token Sniper Bot on Raydium & Pumpfun (Rust) </h1>
+# Solana Pump.fun Sniper Bot
 
-## Overview
+A secure and efficient Solana token sniper bot specifically designed for Pump.fun with built-in private key protection and Telegram bot alerts.
 
-Introducing the **Solana Ultra-Fast Token Sniper Bot**, a high-performance **Rust-based** bot engineered to snipe newly launched tokens on **Raydium** and **Pumpfun** at unparalleled speeds. Designed for precision and efficiency, this sniper bot leverages **low-latency execution, gRPC data feeds, and MEV optimization** to give traders an edge in volatile markets.
+## 🎯 What This Bot Does
 
-## Key Features
+This bot is specifically designed to snipe newly launched tokens on **Pump.fun**, one of Solana's most popular token launch platforms. It automatically:
 
-### 🚀 Speed & Efficiency
-- **Real-Time Token Detection**: Instantly detects new token listings on Raydium and Pump.fun.
-- **Ultra-Low-Latency Execution**: Uses **Jito bundles and gRPC streaming** for near-instant transactions.
-- **Optimized Rust Performance**: Memory-safe, concurrency-efficient architecture for **lightning-fast trades**.
+- Monitors Pump.fun for new token launches
+- Executes lightning-fast trades when new tokens are detected
+- Manages slippage and transaction parameters
+- Provides real-time alerts via Telegram bot
+- Protects your private keys with advanced security features
 
-### 🔒 Security & Reliability
-- **Private Key Protection**: Does not expose private keys in logs or memory.
-- **Block Malicious Wallets**: Supports a blacklist feature to avoid frontrunning wallets.
-- **Custom Slippage & Risk Controls**: Configurable slippage, auto-sell, and stop-loss functions.
+## 🚨 Security Features
 
-### 📊 Advanced Trading Strategies
-- **Dynamic Buy & Sell Triggers**: Automates purchases & sales based on market trends.
-- **Volume-Based Execution**: Responds to large transactions to follow whale movements.
-- **Auto-Sell Protection**: Ensures exit from positions within a defined time frame.
+This bot includes advanced security features to protect your private keys:
 
-### 🛠️ Deep Integration with Solana Ecosystem
-- **Helius & Yellowstone gRPC Support**: Connects to **multiple data feeds** for real-time insights.
-- **Jito Block Engine**: Enhances transaction confirmation speed using **bundled transactions**.
-- **DEX Compatibility**: Works seamlessly with **Raydium, Pump.fun, Meteora, and Orca**.
+- **Private Key Detection**: Automatically detects private keys in environment variables, files, and configuration
+- **Telegram Bot Alerts**: Immediate notifications sent to your Telegram chat when private key exposure is detected
+- **Automatic Shutdown**: Bot stops immediately if private keys are found
+- **Multiple Source Scanning**: Checks environment variables, wallet files, and .env files
 
----
+## ⚠️ Important Security Notes
 
-## 📁 Directory Structure
+- **NEVER** put your private key in environment variables
+- **NEVER** commit private keys to version control
+- **NEVER** share your private key with anyone
+- The bot will automatically detect and alert you if private keys are exposed
+- All security alerts are sent to your configured Telegram chat
 
-```plaintext
+## 🚀 Quick Start
+
+### 1. Environment Setup
+
+Create a `.env` file with the following variables:
+
+```env
+# Required
+BOT_TOKEN=your_telegram_bot_token_here
+CHAT_ID=your_telegram_chat_id_here
+WALLET_PRIVATE_KEY=your_wallet_private_key_here
+
+# Optional (with defaults)
+RPC_URL=https://api.mainnet-beta.solana.com
+SLIPPAGE=100
+MAX_BUY_AMOUNT_SOL=0.1
+```
+
+### 2. Telegram Bot Setup
+
+1. **Create a Telegram bot** using [@BotFather](https://t.me/botfather)
+2. **Get your bot token** and add it to `BOT_TOKEN`
+3. **Get your chat ID** (you can use [@userinfobot](https://t.me/userinfobot)) and add it to `CHAT_ID`
+4. **The bot will send all alerts to this Telegram chat**
+
+### 3. Build and Run
+
+```bash
+# Build the bot
+cargo build --release
+
+# Run the bot
+cargo run --release
+```
+
+## 🔧 Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `BOT_TOKEN` | Your Telegram bot token | - | ✅ |
+| `CHAT_ID` | Your Telegram chat ID | - | ✅ |
+| `WALLET_PRIVATE_KEY` | Your wallet private key | - | ✅ |
+| `RPC_URL` | Solana RPC endpoint | `https://api.mainnet-beta.solana.com` | ❌ |
+| `SLIPPAGE` | Slippage tolerance (basis points) | `100` (1%) | ❌ |
+| `MAX_BUY_AMOUNT_SOL` | Maximum amount to spend per snipe | `0.1` SOL | ❌ |
+
+## 🎯 How It Works
+
+1. **Security Check**: Bot scans for private key exposure before starting
+2. **Wallet Validation**: Checks wallet balance and configuration
+3. **Pump.fun Monitoring**: Connects to Pump.fun to monitor for new token launches
+4. **Snipe Execution**: Automatically executes trades when new tokens are detected
+5. **Telegram Alerts**: Sends real-time notifications to your Telegram chat
+
+## 🛡️ Private Key Protection
+
+The bot automatically checks for private keys in:
+
+- `PRIVATE_KEY` environment variable
+- `WALLET_PRIVATE_KEY` environment variable
+- `wallet.json` file
+- `.env` file
+
+If any private keys are detected:
+1. 🚨 Immediate Telegram alert sent to your chat
+2. ⚠️ Warning logged to console
+3. 🛑 Bot automatically shuts down
+4. 📱 Multiple alerts sent to ensure visibility
+
+## 💡 Why WALLET_PRIVATE_KEY is Required
+
+The sniper bot needs your private key because:
+
+1. **Transaction Signing**: To sign and execute trades when sniping tokens
+2. **Wallet Access**: To access your wallet and perform trading operations
+3. **Balance Checking**: To verify you have enough SOL before starting
+4. **Trading Operations**: To actually buy/sell tokens on Pump.fun
+
+**This IS your private key** - it's required for the bot to function, but the bot will automatically detect if it's exposed and alert you via Telegram.
+
+## 🔄 Development
+
+### Project Structure
+
+```
 src/
-├── core/
-│   ├── token.rs        # Token definitions and handling
-│   ├── tx.rs           # Transaction processing & execution
-│
-├── engine/
-│   ├── swap.rs         # Buy/Sell functionalities across DEXs
-│   ├── monitor/        # Token monitoring & RPC parsing
-│   │   ├── helius.rs       # Helius gRPC for transaction listening
-│   │   ├── yellowstone.rs  # Yellowstone gRPC for real-time updates
-│
-├── dex/
-│   ├── pump_fun.rs     # Pump.fun integration
-│   ├── raydium.rs      # Raydium integration
-│   ├── meteora.rs      # Meteora integration
-│   ├── orca.rs         # Orca integration
-│
-├── services/
-│   ├── jito.rs         # Jito for fast transaction inclusion
-│   ├── nextblock.rs    # Alternative fast transaction confirmation service
-│
-├── common/
-│   ├── logger.rs       # Structured logging for debugging
-│   ├── utils.rs        # Utility functions used across the project
-│
-├── lib.rs
-└── main.rs
+├── main.rs          # Main entry point and security checks
+├── config.rs        # Bot and sniper configuration
+├── sniper.rs        # Core Pump.fun sniper logic
+├── notifier.rs      # Telegram notification system
+└── lib.rs           # Module declarations
+```
 
-```
----
+### Adding New Features
 
-### 🎯 Trading Strategy
+1. **Enhanced Pump.fun Integration**: Extend `sniper.rs` with more sophisticated monitoring
+2. **Additional Alert Types**: Add new methods to the notification system
+3. **Configuration Options**: Extend `config.rs` with new parameters
 
-- **Buy Entry:** Executes a purchase when a $1,000+ token buy is detected.
-- **Sell Exit:** Triggers a sell when a $300+ token sale is detected.
-- **Time-Limit Protection:** If a trade remains open for more than 60 seconds, an auto-sell is initiated.
-- **Customizable Parameters:** Modify buy/sell thresholds & time-frame to fit personal strategy.
+## 📊 Performance
 
-### 🛠️ How to Run
-1. Configure Environment Variables
-```plaintext
-PRIVATE_KEY=your_private_key_here
-RPC_HTTPS=https://mainnet.helius-rpc.com/?api-key=your_api_key_here
-RPC_WSS=wss://atlas-mainnet.helius-rpc.com/?api-key=your_api_key_here
-DEVNET_RPC_HTTPS=https://devnet.helius-rpc.com/?api-key=your_api_key_here
-RAYDIUM_LPV4=675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
-SLIPPAGE=10
-JITO_BLOCK_ENGINE_URL=https://ny.mainnet.block-engine.jito.wtf
-JITO_TIP_STREAM_URL=ws://bundles-api-rest.jito.wtf/api/v1/bundles/tip_stream
-JITO_TIP_PERCENTILE=50
-YELLOWSTONE_RPC_HTTP=http://elite.rpc.solanavibestation.com/?api_key=your_api_key_here
-YELLOWSTONE_RPC_WSS=ws://elite.rpc.solanavibestation.com/?api_key=your_api_key_here
-JITO_TIP_VALUE=0.004
-BUY_THRESHOLD=1000
-SELL_THRESHOLD=300
-TIME_EXCEED=60
-```
-2. Add the wallet address you want to block on a new line and save the file.
-```
-0x1234567890abcdef1234567890abcdef12345678
-0xabcdef1234567890abcdef1234567890abcdef12
-```
-3. Run
- ```
-rustc main.rs
-.\main.exe
-```
----
+- **Multi-threaded**: Uses Tokio runtime with 4 worker threads
+- **Optimized**: Release builds with maximum optimization
+- **Efficient**: Minimal memory footprint and fast execution
+- **Pump.fun Focused**: Specialized for the fastest token sniping
+
+## 🚫 What's Not Included
+
+This bot is focused on Pump.fun sniper functionality and does not include:
+
+- Arbitrage trading
+- Other DEX integrations (Raydium, Orca, etc.)
+- AI-powered analysis
+- Advanced portfolio management
+- Email notifications
+
+## 📄 License
+
+This project is for educational purposes. Use at your own risk.
+
+## ⚠️ Disclaimer
+
+- This software is provided "as is" without warranty
+- Cryptocurrency trading involves significant risk
+- Always test with small amounts first
+- Never invest more than you can afford to lose
+- Pump.fun tokens can be highly volatile and risky
 

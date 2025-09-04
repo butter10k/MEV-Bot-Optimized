@@ -1,6 +1,3 @@
-pub mod ai;
-pub mod common;
-pub mod core;
-pub mod dex;
-pub mod engine;
-pub mod services;
+pub mod sniper;
+pub mod notifier; // Contains email notification functionality
+pub mod config;
