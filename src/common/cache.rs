@@ -15,41 +15,38 @@ use std::{
 };
 use tracing::{debug, info};
 
-// Cache performance metrics
 static CACHE_HITS: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
 static CACHE_MISSES: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
 static CACHE_OPERATIONS: LazyLock<AtomicU64> = LazyLock::new(|| AtomicU64::new(0));
 
-// High-performance cached data structures
 static PRICE_CACHE: LazyLock<Cache<String, CachedPrice>> = LazyLock::new(|| {
-    CacheBuilder::new(1000) // Max 1000 price entries
-        .time_to_live(Duration::from_secs(30)) // 30 second TTL
-        .time_to_idle(Duration::from_secs(10)) // 10 second idle timeout
+    CacheBuilder::new(1000)
+        .time_to_live(Duration::from_secs(30)) 
+        .time_to_idle(Duration::from_secs(10)) 
         .build()
 });
 
 static TOKEN_METADATA_CACHE: LazyLock<Cache<Pubkey, CachedTokenMetadata>> = LazyLock::new(|| {
-    CacheBuilder::new(5000) // Max 5000 token entries
-        .time_to_live(Duration::from_secs(300)) // 5 minute TTL
-        .time_to_idle(Duration::from_secs(60))  // 1 minute idle timeout
+    CacheBuilder::new(5000)
+        .time_to_live(Duration::from_secs(300)) 
+        .time_to_idle(Duration::from_secs(60))  
         .build()
 });
 
 static ACCOUNT_BALANCE_CACHE: LazyLock<Cache<Pubkey, CachedBalance>> = LazyLock::new(|| {
-    CacheBuilder::new(500) // Max 500 account entries
-        .time_to_live(Duration::from_secs(10)) // 10 second TTL for balances
-        .time_to_idle(Duration::from_secs(5))   // 5 second idle timeout
+    CacheBuilder::new(500) 
+        .time_to_live(Duration::from_secs(10)) 
+        .time_to_idle(Duration::from_secs(5))   
         .build()
 });
 
 static POOL_STATE_CACHE: LazyLock<Cache<Pubkey, CachedPoolState>> = LazyLock::new(|| {
-    CacheBuilder::new(200) // Max 200 pool entries
-        .time_to_live(Duration::from_secs(60)) // 1 minute TTL
-        .time_to_idle(Duration::from_secs(30))  // 30 second idle timeout
+    CacheBuilder::new(200) 
+        .time_to_live(Duration::from_secs(60)) 
+        .time_to_idle(Duration::from_secs(30))  
         .build()
 });
 
-// Real-time tracking caches with manual eviction
 static RECENT_TRANSACTIONS: LazyLock<Arc<DashMap<String, CachedTransaction>>> = 
     LazyLock::new(|| Arc::new(DashMap::new()));
 
@@ -174,7 +171,6 @@ pub struct WalletActivity {
 pub struct CacheManager;
 
 impl CacheManager {
-    /// Get price data with intelligent caching
     pub async fn get_price(&self, token_mint: &Pubkey) -> Option<CachedPrice> {
         CACHE_OPERATIONS.fetch_add(1, Ordering::SeqCst);
         
@@ -191,14 +187,12 @@ impl CacheManager {
         }
     }
 
-    /// Cache price data with automatic eviction
     pub async fn cache_price(&self, price_data: CachedPrice) {
         let cache_key = price_data.token_mint.to_string();
         PRICE_CACHE.insert(cache_key, price_data).await;
         debug!("Cached price for token: {}", price_data.token_mint);
     }
 
-    /// Get token metadata with caching
     pub async fn get_token_metadata(&self, mint: &Pubkey) -> Option<CachedTokenMetadata> {
         CACHE_OPERATIONS.fetch_add(1, Ordering::SeqCst);
         
@@ -213,13 +207,11 @@ impl CacheManager {
         }
     }
 
-    /// Cache token metadata
     pub async fn cache_token_metadata(&self, metadata: CachedTokenMetadata) {
         TOKEN_METADATA_CACHE.insert(metadata.mint, metadata.clone()).await;
         debug!("Cached token metadata for: {}", metadata.mint);
     }
 
-    /// Get account balance with caching
     pub async fn get_account_balance(&self, account: &Pubkey) -> Option<CachedBalance> {
         CACHE_OPERATIONS.fetch_add(1, Ordering::SeqCst);
         
@@ -234,13 +226,11 @@ impl CacheManager {
         }
     }
 
-    /// Cache account balance
     pub async fn cache_account_balance(&self, balance: CachedBalance) {
         ACCOUNT_BALANCE_CACHE.insert(balance.account, balance.clone()).await;
         debug!("Cached account balance for: {}", balance.account);
     }
 
-    /// Get pool state with caching
     pub async fn get_pool_state(&self, pool: &Pubkey) -> Option<CachedPoolState> {
         CACHE_OPERATIONS.fetch_add(1, Ordering::SeqCst);
         
@@ -255,45 +245,37 @@ impl CacheManager {
         }
     }
 
-    /// Cache pool state
     pub async fn cache_pool_state(&self, pool_state: CachedPoolState) {
         POOL_STATE_CACHE.insert(pool_state.pool_address, pool_state.clone()).await;
         debug!("Cached pool state for: {}", pool_state.pool_address);
     }
 
-    /// Track recent transaction (manual eviction)
     pub fn track_transaction(&self, transaction: CachedTransaction) {
         RECENT_TRANSACTIONS.insert(transaction.signature.clone(), transaction.clone());
         debug!("Tracked transaction: {}", transaction.signature);
         
-        // Manual cleanup if too many entries
         if RECENT_TRANSACTIONS.len() > 10000 {
             self.cleanup_old_transactions();
         }
     }
 
-    /// Check if transaction was recently processed
     pub fn is_transaction_processed(&self, signature: &str) -> bool {
         RECENT_TRANSACTIONS.contains_key(signature)
     }
 
-    /// Update wallet activity tracking
     pub fn update_wallet_activity(&self, wallet: Pubkey, activity: WalletActivity) {
         WALLET_ACTIVITY.insert(wallet, activity);
         debug!("Updated wallet activity for: {}", wallet);
         
-        // Manual cleanup if too many entries
         if WALLET_ACTIVITY.len() > 5000 {
             self.cleanup_old_wallet_activity();
         }
     }
 
-    /// Get wallet activity data
     pub fn get_wallet_activity(&self, wallet: &Pubkey) -> Option<WalletActivity> {
         WALLET_ACTIVITY.get(wallet).map(|entry| entry.value().clone())
     }
 
-    /// Check if wallet is flagged as high-risk
     pub fn is_high_risk_wallet(&self, wallet: &Pubkey) -> bool {
         if let Some(activity) = self.get_wallet_activity(wallet) {
             activity.risk_score > 0.8 || activity.is_blacklisted
@@ -302,9 +284,8 @@ impl CacheManager {
         }
     }
 
-    /// Manual cleanup of old transactions
     fn cleanup_old_transactions(&self) {
-        let cutoff = Instant::now() - Duration::from_secs(300); // 5 minutes
+        let cutoff = Instant::now() - Duration::from_secs(300);
         
         let old_signatures: Vec<String> = RECENT_TRANSACTIONS
             .iter()
@@ -319,9 +300,8 @@ impl CacheManager {
         debug!("Cleaned up old transaction records");
     }
 
-    /// Manual cleanup of old wallet activity
     fn cleanup_old_wallet_activity(&self) {
-        let cutoff = Instant::now() - Duration::from_hours(24); // 24 hours
+        let cutoff = Instant::now() - Duration::from_hours(24); 
         
         let old_wallets: Vec<Pubkey> = WALLET_ACTIVITY
             .iter()
@@ -336,16 +316,13 @@ impl CacheManager {
         debug!("Cleaned up old wallet activity records");
     }
 
-    /// Get comprehensive cache statistics
     pub async fn get_cache_statistics(&self) -> HashMap<String, u64> {
         let mut stats = HashMap::new();
         
-        // Performance metrics
         stats.insert("cache_hits".to_string(), CACHE_HITS.load(Ordering::SeqCst));
         stats.insert("cache_misses".to_string(), CACHE_MISSES.load(Ordering::SeqCst));
         stats.insert("cache_operations".to_string(), CACHE_OPERATIONS.load(Ordering::SeqCst));
         
-        // Cache sizes
         stats.insert("price_cache_size".to_string(), PRICE_CACHE.entry_count());
         stats.insert("metadata_cache_size".to_string(), TOKEN_METADATA_CACHE.entry_count());
         stats.insert("balance_cache_size".to_string(), ACCOUNT_BALANCE_CACHE.entry_count());
@@ -353,7 +330,6 @@ impl CacheManager {
         stats.insert("transaction_cache_size".to_string(), RECENT_TRANSACTIONS.len() as u64);
         stats.insert("wallet_activity_size".to_string(), WALLET_ACTIVITY.len() as u64);
         
-        // Hit rate calculation
         let total_ops = CACHE_OPERATIONS.load(Ordering::SeqCst);
         let hit_rate = if total_ops > 0 {
             (CACHE_HITS.load(Ordering::SeqCst) * 100) / total_ops
@@ -365,12 +341,10 @@ impl CacheManager {
         stats
     }
 
-    /// Force cache cleanup (can be called manually)
     pub async fn force_cleanup(&self) {
         self.cleanup_old_transactions();
         self.cleanup_old_wallet_activity();
         
-        // Invalidate expired entries in Moka caches
         PRICE_CACHE.run_pending_tasks().await;
         TOKEN_METADATA_CACHE.run_pending_tasks().await;
         ACCOUNT_BALANCE_CACHE.run_pending_tasks().await;
@@ -379,20 +353,17 @@ impl CacheManager {
         info!("Forced cache cleanup completed");
     }
 
-    /// Preload commonly used data for better performance
     pub async fn preload_common_data(&self) -> Result<()> {
         info!("Starting cache preloading...");
         
-        // Preload common token metadata (SOL, USDC, etc.)
         let common_tokens = vec![
-            "So11111111111111111111111111111111111111112", // Wrapped SOL
-            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
-            "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", // USDT
+            "So11111111111111111111111111111111111111112", 
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 
+            "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", 
         ];
         
         for token_str in common_tokens {
             if let Ok(mint) = token_str.parse() {
-                // This would typically fetch from an API and cache
                 let metadata = CachedTokenMetadata {
                     mint,
                     name: "Preloaded Token".to_string(),
@@ -418,23 +389,19 @@ impl CacheManager {
     }
 }
 
-/// Global cache manager instance
 pub static CACHE_MANAGER: LazyLock<CacheManager> = LazyLock::new(|| CacheManager);
 
-/// Background task to maintain cache health
 pub async fn start_cache_maintenance_task() {
     info!("Starting cache maintenance task");
     
     tokio::spawn(async {
-        let mut interval = tokio::time::interval(Duration::from_secs(120)); // 2 minutes
+        let mut interval = tokio::time::interval(Duration::from_secs(120));
         
         loop {
             interval.tick().await;
             
-            // Run cache maintenance
             CACHE_MANAGER.force_cleanup().await;
             
-            // Log cache statistics periodically
             let stats = CACHE_MANAGER.get_cache_statistics().await;
             debug!("Cache stats: hit_rate={}%, operations={}", 
                   stats.get("hit_rate_percentage").unwrap_or(&0),
@@ -443,14 +410,11 @@ pub async fn start_cache_maintenance_task() {
     });
 }
 
-/// Initialize caching system with preloading
 pub async fn initialize_cache_system() -> Result<()> {
     info!("Initializing high-performance caching system");
     
-    // Preload common data
     CACHE_MANAGER.preload_common_data().await?;
     
-    // Start maintenance task
     start_cache_maintenance_task().await;
     
     info!("Caching system initialized successfully");

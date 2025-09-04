@@ -18,8 +18,8 @@ pub enum SwapDirection {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SwapInType {
-    ExactIn,  // Specify exact input amount
-    ExactOut, // Specify exact output amount
+    ExactIn, 
+    ExactOut,
 }
 
 #[derive(Debug, Clone)]

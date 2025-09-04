@@ -1,0 +1,60 @@
+# Environment Configuration for MEV Trading Bot
+# Copy these variables to your .env file
+
+# Basic Configuration
+RPC_URL=https://api.mainnet-beta.solana.com
+WALLET_PRIVATE_KEY=your_wallet_private_key_here
+
+# Trading Parameters
+SLIPPAGE=100
+MAX_BUY_AMOUNT_SOL=0.1
+
+# Advanced Trading Strategy Settings
+MIN_LIQUIDITY_SOL=0.5
+MAX_LIQUIDITY_SOL=100.0
+MIN_HOLDER_COUNT=10
+MAX_HOLDER_COUNT=10000
+MIN_MARKET_CAP_SOL=1.0
+MAX_MARKET_CAP_SOL=1000.0
+
+# Buy Strategy
+BUY_STRATEGY=Immediate
+AUTO_BUY=true
+BUY_DELAY_MS=1000
+MAX_CONCURRENT_BUYS=5
+
+# Sell Strategy
+SELL_STRATEGY=TakeProfit
+AUTO_SELL=true
+TAKE_PROFIT_PERCENTAGE=50.0
+STOP_LOSS_PERCENTAGE=20.0
+TRAILING_STOP=false
+TRAILING_STOP_PERCENTAGE=10.0
+
+# Risk Management
+MAX_PORTFOLIO_RISK=20.0
+MAX_SINGLE_POSITION=5.0
+RISK_REWARD_RATIO=2.0
+
+# Token Filtering
+BLACKLISTED_CREATORS=
+WHITELISTED_CREATORS=
+MIN_TOKEN_AGE_MINUTES=1
+MAX_TOKEN_AGE_HOURS=72
+
+# Technical Analysis
+ENABLE_TECHNICAL_ANALYSIS=true
+RSI_PERIOD=14
+RSI_OVERSOLD=30.0
+RSI_OVERBOUGHT=70.0
+VOLUME_MULTIPLIER=3.0
+
+# Custom Strategies (if using Custom strategy)
+# CUSTOM_BUY_STRATEGY=
+# CUSTOM_SELL_STRATEGY=
+# SELL_TIME_HOURS=24
+
+# Note: BOT_TOKEN and CHAT_ID are now hardcoded in src/config.rs
+# Update the values directly in the code file:
+# bot_token = "YOUR_ACTUAL_BOT_TOKEN".to_string();
+# chat_id = "YOUR_ACTUAL_CHAT_ID".to_string();

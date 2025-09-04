@@ -12,11 +12,9 @@ use std::{
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
-// Global performance metrics
 static PERFORMANCE_METRICS: LazyLock<Arc<PerformanceMonitor>> = 
     LazyLock::new(|| Arc::new(PerformanceMonitor::new()));
 
-// High-frequency counters for performance tracking
 static TRANSACTION_LATENCY_HISTOGRAM: LazyLock<Arc<DashMap<u64, AtomicU64>>> = 
     LazyLock::new(|| Arc::new(DashMap::new()));
 
@@ -145,12 +143,10 @@ impl PerformanceMonitor {
             self.failed_operations.fetch_add(1, Ordering::SeqCst);
         }
 
-        // Record execution time
         {
             let mut times = self.execution_times.write().await;
             times.push(execution_time);
             
-            // Keep only last 10,000 measurements
             if times.len() > 10000 {
                 times.remove(0);
             }
@@ -178,8 +174,7 @@ impl PerformanceMonitor {
             *impact_sum += price_impact;
         }
 
-        // Record in histogram for percentile calculations
-        let latency_bucket = (execution_time.as_millis() / 10) * 10; // 10ms buckets
+        let latency_bucket = (execution_time.as_millis() / 10) * 10; 
         TRANSACTION_LATENCY_HISTOGRAM
             .entry(latency_bucket as u64)
             .or_insert_with(|| AtomicU64::new(0))
@@ -304,7 +299,6 @@ impl PerformanceMonitor {
     }
 
     async fn get_network_conditions(&self) -> NetworkConditions {
-        // This would typically be populated from real network monitoring
         NetworkConditions {
             avg_confirmation_time_ms: 400.0,
             current_slot: 250_000_000,
@@ -322,8 +316,7 @@ impl PerformanceMonitor {
     }
 
     async fn get_cache_hit_rate(&self) -> f64 {
-        // This would be fetched from the cache manager
-        0.85 // Placeholder 85% hit rate
+        0.85 85% hit rate
     }
 
     pub async fn start_monitoring(&self) -> Result<()> {
@@ -338,10 +331,8 @@ impl PerformanceMonitor {
             loop {
                 monitoring_interval.tick().await;
 
-                // Update system metrics
                 monitor.update_system_metrics().await;
 
-                // Log performance summary every minute
                 if monitor.start_time.elapsed().as_secs() % 60 == 0 {
                     let snapshot = monitor.get_performance_snapshot().await;
                     info!("Performance Summary: {} total ops, {:.1}% success rate, {:.1}ms avg latency, {:.1} ops/sec",
@@ -357,12 +348,10 @@ impl PerformanceMonitor {
     }
 
     async fn update_system_metrics(&self) {
-        // This would typically use system monitoring libraries
-        // For now, we'll use placeholder values
         let mut metrics = self.system_metrics.write().await;
-        metrics.memory_usage_mb = 512.0; // Placeholder
-        metrics.cpu_usage_percent = 25.0; // Placeholder
-        metrics.network_latency_ms = 50.0; // Placeholder
+        metrics.memory_usage_mb = 512.0;
+        metrics.cpu_usage_percent = 25.0;
+        metrics.network_latency_ms = 50.0;
         metrics.last_updated = Instant::now();
     }
 
@@ -372,7 +361,6 @@ impl PerformanceMonitor {
             AlertSeverity::Warning => warn!("PERF WARNING: {}", message),
             AlertSeverity::Critical => {
                 warn!("PERF CRITICAL: {}", message);
-                // Could trigger additional alerting systems
             }
         }
     }
@@ -401,7 +389,6 @@ impl TransactionTimer {
     }
 }
 
-// Global performance monitoring functions
 pub async fn record_transaction_start() -> TransactionTimer {
     PERFORMANCE_METRICS.record_transaction_start().await
 }
@@ -430,16 +417,14 @@ pub fn log_performance_alert(message: &str, severity: AlertSeverity) {
     PERFORMANCE_METRICS.log_performance_alert(message, severity);
 }
 
-// Adaptive performance optimization based on current conditions
 pub async fn get_optimal_batch_size() -> usize {
     let snapshot = get_performance_snapshot().await;
     
-    // Adjust batch size based on current performance
     match snapshot.avg_execution_time_ms {
-        t if t < 500.0 => 20,   // Fast execution, larger batches
-        t if t < 1000.0 => 15,  // Medium execution, medium batches
-        t if t < 2000.0 => 10,  // Slow execution, smaller batches
-        _ => 5,                 // Very slow, minimal batches
+        t if t < 500.0 => 20,  
+        t if t < 1000.0 => 15,  
+        t if t < 2000.0 => 10,  
+        _ => 5,                
     }
 }
 
@@ -450,14 +435,13 @@ pub async fn get_recommended_priority_fee(urgency: &str) -> u64 {
         .priority_fee_recommendations
         .get(urgency)
         .copied()
-        .unwrap_or(5000) // Default 5000 lamports
+        .unwrap_or(5000) 
 }
 
 pub async fn should_throttle_operations() -> bool {
     let snapshot = get_performance_snapshot().await;
     
-    // Throttle if success rate is too low or latency too high
     snapshot.successful_transactions as f64 / snapshot.total_transactions.max(1) as f64 < 0.8
-        || snapshot.p95_latency_ms > 5000.0 // 5 second P95
+        || snapshot.p95_latency_ms > 5000.0
         || matches!(snapshot.network_conditions.congestion_level, CongestionLevel::Critical)
 }

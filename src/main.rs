@@ -5,6 +5,10 @@ use tracing_subscriber;
 mod sniper;
 mod notifier;
 mod config;
+mod trading_strategy;
+mod technical_analysis;
+mod risk_management;
+mod pump_fun_monitor;
 
 use sniper::PumpFunSniper;
 use notifier::Notifier;
@@ -38,7 +42,6 @@ async fn main() -> anyhow::Result<()> {
     
     info!("Starting Pump.fun token sniper...");
     
-    // Start sniper
     sniper.start().await?;
     
     Ok(())

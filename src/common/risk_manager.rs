@@ -243,7 +243,6 @@ impl RiskManager {
         let risk_limits = self.risk_limits.read().await;
         let current_metrics = self.calculate_current_risk_metrics().await?;
         
-        // Check position size limit
         if trade_size_sol > risk_limits.max_position_size_sol {
             return Ok(TradeRiskAssessment::rejected(
                 format!("Trade size ({:.2} SOL) exceeds maximum allowed ({:.2} SOL)", 
@@ -251,7 +250,6 @@ impl RiskManager {
             ));
         }
 
-        // Check portfolio allocation
         let allocation_percent = (trade_size_sol / current_metrics.portfolio_value) * 100.0;
         if allocation_percent > risk_limits.max_portfolio_allocation_percent {
             return Ok(TradeRiskAssessment::rejected(
@@ -260,14 +258,12 @@ impl RiskManager {
             ));
         }
 
-        // Check daily loss limit
         if current_metrics.daily_pnl < -risk_limits.max_daily_loss_sol {
             return Ok(TradeRiskAssessment::rejected(
                 format!("Daily loss limit reached ({:.2} SOL)", risk_limits.max_daily_loss_sol)
             ));
         }
 
-        // Check maximum positions
         let active_positions = POSITION_MANAGER.get_active_position_count().await;
         if active_positions >= risk_limits.max_concurrent_positions {
             return Ok(TradeRiskAssessment::rejected(
@@ -275,7 +271,6 @@ impl RiskManager {
             ));
         }
 
-        // Check token concentration
         let token_exposure = current_metrics.exposure_by_token.get(&token_mint).unwrap_or(&0.0);
         let new_exposure = (*token_exposure + trade_size_sol) / current_metrics.portfolio_value * 100.0;
         if new_exposure > risk_limits.max_exposure_per_token_percent {
@@ -285,7 +280,6 @@ impl RiskManager {
             ));
         }
 
-        // Check slippage tolerance
         if expected_slippage > risk_limits.max_slippage_tolerance_percent {
             return Ok(TradeRiskAssessment::rejected(
                 format!("Expected slippage ({:.2}%) exceeds tolerance ({:.2}%)", 
@@ -293,7 +287,6 @@ impl RiskManager {
             ));
         }
 
-        // Check gas fee limit
         if gas_fee > risk_limits.max_gas_fee_per_trade_sol {
             return Ok(TradeRiskAssessment::rejected(
                 format!("Gas fee ({:.4} SOL) exceeds maximum ({:.4} SOL)", 
@@ -301,7 +294,6 @@ impl RiskManager {
             ));
         }
 
-        // Check cooldown after loss
         if let Some(last_loss) = *self.last_loss_time.read().await {
             if last_loss.elapsed() < risk_limits.cooldown_period_after_loss {
                 return Ok(TradeRiskAssessment::rejected(
@@ -311,12 +303,10 @@ impl RiskManager {
             }
         }
 
-        // Check circuit breakers
         if self.check_circuit_breakers().await {
             return Ok(TradeRiskAssessment::rejected("Circuit breaker active".to_string()));
         }
 
-        // Calculate risk score
         let risk_score = self.calculate_trade_risk_score(
             trade_size_sol, 
             allocation_percent, 
@@ -324,7 +314,6 @@ impl RiskManager {
             &current_metrics
         ).await;
 
-        // Determine approval based on risk score
         if risk_score < 0.3 {
             Ok(TradeRiskAssessment::approved())
         } else if risk_score < 0.7 {
@@ -346,21 +335,15 @@ impl RiskManager {
     ) -> f64 {
         let mut risk_score = 0.0;
 
-        // Size risk component
-        risk_score += (trade_size / 50.0).min(0.3); // Max 0.3 for size
+        risk_score += (trade_size / 50.0).min(0.3);
 
-        // Allocation risk component
-        risk_score += (allocation_percent / 50.0).min(0.2); // Max 0.2 for allocation
+        risk_score += (allocation_percent / 50.0).min(0.2); 
 
-        // Slippage risk component
-        risk_score += (slippage / 10.0).min(0.2); // Max 0.2 for slippage
+        risk_score += (slippage / 10.0).min(0.2); 
 
-        // Portfolio risk component
-        risk_score += (metrics.current_drawdown / 25.0).min(0.2); // Max 0.2 for drawdown
+        risk_score += (metrics.current_drawdown / 25.0).min(0.2);
 
-        // Volatility component
-        risk_score += (metrics.var_95 / 100.0).min(0.1); // Max 0.1 for VaR
-
+        risk_score += (metrics.var_95 / 100.0).min(0.1);
         risk_score.min(1.0)
     }
 
@@ -369,10 +352,10 @@ impl RiskManager {
             if breaker.is_active {
                 if let Some(last_triggered) = breaker.last_triggered {
                     if last_triggered.elapsed() < breaker.cooldown_period {
-                        return true; // Circuit breaker still active
+                        return true; 
                     }
                 } else {
-                    return true; // Never been reset
+                    return true; 
                 }
             }
         }
@@ -386,43 +369,39 @@ impl RiskManager {
         let total_exposure: f64 = positions.iter().map(|p| p.size_sol).sum();
         let unrealized_pnl: f64 = positions.iter().map(|p| p.unrealized_pnl).sum();
         
-        // Calculate daily PnL
         let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
         let daily_pnl = self.daily_metrics.get(&today)
             .map(|metrics| metrics.total_pnl)
             .unwrap_or(0.0);
 
-        // Calculate exposure by token
         let mut exposure_by_token = HashMap::new();
         for position in &positions {
             *exposure_by_token.entry(position.token_mint).or_insert(0.0) += position.size_sol;
         }
 
-        // Calculate other metrics (simplified)
         Ok(RiskMetrics {
             portfolio_value,
             total_exposure,
             daily_pnl,
             unrealized_pnl,
-            realized_pnl: 0.0, // Would be calculated from closed positions
-            max_drawdown: 15.0, // Placeholder
-            current_drawdown: 5.0, // Placeholder
-            win_rate: 0.65, // Placeholder
-            profit_factor: 1.4, // Placeholder
-            sharpe_ratio: 1.2, // Placeholder
-            var_95: 8.5, // Placeholder 8.5% VaR
-            expected_shortfall: 12.0, // Placeholder
+            realized_pnl: 0.0, 
+            max_drawdown: 15.0,
+            current_drawdown: 5.0,
+            win_rate: 0.65, 
+            profit_factor: 1.4, 
+            sharpe_ratio: 1.2, 
+            var_95: 8.5,
+            expected_shortfall: 12.0, 
             exposure_by_token,
-            risk_score: 0.3, // Placeholder
-            margin_usage: 0.0, // Not applicable for spot trading
-            leverage_ratio: 1.0, // Not applicable for spot trading
+            risk_score: 0.3, 
+            margin_usage: 0.0,
+            leverage_ratio: 1.0,
         })
     }
 
     async fn calculate_portfolio_value(&self, positions: &[Position]) -> f64 {
-        // Calculate total portfolio value including cash and positions
         let position_value: f64 = positions.iter().map(|p| p.size_sol).sum();
-        let cash_balance = 100.0; // Placeholder - would fetch actual cash balance
+        let cash_balance = 100.0;
         
         cash_balance + position_value
     }
@@ -433,7 +412,6 @@ impl RiskManager {
         let risk_limits = self.risk_limits.read().await;
 
         for position in positions {
-            // Check stop loss
             if let Some(stop_loss) = position.stop_loss {
                 if position.current_price <= stop_loss {
                     alerts.push(self.create_alert(
@@ -446,7 +424,6 @@ impl RiskManager {
                 }
             }
 
-            // Check maximum loss
             if position.unrealized_pnl < -position.max_loss {
                 alerts.push(self.create_alert(
                     AlertType::MaxLossExceeded,
@@ -457,19 +434,16 @@ impl RiskManager {
                 ).await);
             }
 
-            // Update trailing stop if applicable
             if let Some(mut trailing_stop) = position.trailing_stop.clone() {
                 if position.current_price > trailing_stop.highest_price {
                     trailing_stop.highest_price = position.current_price;
                     trailing_stop.current_stop = position.current_price - trailing_stop.trail_amount;
                     
-                    // Update position with new trailing stop
                     POSITION_MANAGER.update_trailing_stop(&position.id, trailing_stop).await?;
                 }
             }
         }
 
-        // Check portfolio-level risks
         let metrics = self.calculate_current_risk_metrics().await?;
         
         if metrics.current_drawdown > risk_limits.max_drawdown_percent {
@@ -483,7 +457,6 @@ impl RiskManager {
             ).await);
         }
 
-        // Store alerts
         for alert in &alerts {
             let alert_id = format!("{}_{}", 
                                  chrono::Utc::now().timestamp_millis(), 
@@ -532,13 +505,11 @@ impl RiskManager {
             loop {
                 interval.tick().await;
                 
-                // Monitor positions and generate alerts
                 if let Ok(alerts) = risk_manager.monitor_positions().await {
                     for alert in alerts {
                         match alert.severity {
                             AlertSeverity::Critical | AlertSeverity::Emergency => {
                                 error!("RISK ALERT: {}", alert.message);
-                                // Could trigger automatic actions here
                             }
                             AlertSeverity::Warning => {
                                 warn!("Risk warning: {}", alert.message);
@@ -550,7 +521,6 @@ impl RiskManager {
                     }
                 }
                 
-                // Update portfolio snapshots
                 risk_manager.take_portfolio_snapshot().await;
             }
         });
@@ -566,23 +536,21 @@ impl RiskManager {
         let snapshot = PortfolioSnapshot {
             timestamp: Instant::now(),
             total_value: portfolio_value,
-            cash_balance: 100.0, // Placeholder
+            cash_balance: 100.0, 
             positions_value: portfolio_value - 100.0,
             unrealized_pnl,
-            leverage: 1.0, // No leverage for spot trading
+            leverage: 1.0,
         };
 
         let mut history = self.portfolio_history.write().await;
         history.push(snapshot);
-        
-        // Keep only last 1000 snapshots
+
         if history.len() > 1000 {
             history.remove(0);
         }
     }
 }
 
-// Position management
 pub struct PositionManager {
     active_positions: Arc<DashMap<String, Position>>,
     closed_positions: Arc<DashMap<String, Position>>,
@@ -624,7 +592,7 @@ impl PositionManager {
             realized_pnl: 0.0,
             position_type,
             risk_level: RiskLevel::Moderate,
-            max_loss: size_sol * 0.1, // 10% max loss by default
+            max_loss: size_sol * 0.1,
             trailing_stop: None,
         };
 
@@ -636,12 +604,10 @@ impl PositionManager {
 
     pub async fn close_position(&self, position_id: &str, exit_price: f64) -> Result<Position> {
         if let Some((_, mut position)) = self.active_positions.remove(position_id) {
-            // Calculate realized PnL
             let price_change = (exit_price - position.entry_price) / position.entry_price;
             position.realized_pnl = position.size_sol * price_change;
             position.current_price = exit_price;
 
-            // Store in closed positions
             self.closed_positions.insert(position_id.to_string(), position.clone());
 
             info!("Closed position: {} with PnL: {:.4} SOL", position_id, position.realized_pnl);
@@ -655,7 +621,6 @@ impl PositionManager {
         if let Some(mut position) = self.active_positions.get_mut(position_id) {
             position.current_price = current_price;
             
-            // Calculate unrealized PnL
             let price_change = (current_price - position.entry_price) / position.entry_price;
             position.unrealized_pnl = position.size_sol * price_change;
 
@@ -728,7 +693,6 @@ impl TradeRiskAssessment {
     }
 }
 
-// Global risk management functions
 pub async fn evaluate_trade_risk(
     token_mint: Pubkey,
     trade_size_sol: f64,

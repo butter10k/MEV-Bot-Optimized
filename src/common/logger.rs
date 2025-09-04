@@ -8,7 +8,6 @@ pub struct Logger {
 }
 
 impl Logger {
-    // Constructor function to create a new Logger instance
     pub fn new(prefix: String) -> Self {
         Logger {
             prefix,
@@ -16,7 +15,6 @@ impl Logger {
         }
     }
 
-    // Method to log a message with a prefix
     pub fn log(&self, message: String) -> String {
         let log = format!("{} {}", self.prefix_with_date(), message);
         println!("{}", log);
