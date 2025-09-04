@@ -5,7 +5,7 @@ use anyhow::{Result, anyhow};
 pub struct SniperConfig {
     pub rpc_url: String,
     pub slippage: u64, // in basis points (100 = 1%)
-    pub max_buy_amount: u64, // in lamports
+    pub max_buy_amount: f64, // in lamports
     pub bot_token: String,
     pub chat_id: String,
 }
@@ -45,7 +45,7 @@ impl SniperConfig {
             return Err(anyhow!("Slippage too high: {}% (max 10%)", self.slippage as f64 / 100.0));
         }
         
-        if self.max_buy_amount > 10_000_000_000 {
+        if self.max_buy_amount > 10_000_000_000.0 {
             return Err(anyhow!("Max buy amount too high: {} SOL (max 10 SOL)", 
                 self.max_buy_amount as f64 / 1_000_000_000.0));
         }
