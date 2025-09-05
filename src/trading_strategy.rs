@@ -3,7 +3,7 @@ use anyhow::{Result, anyhow};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, debug};
+use tracing::{info};
 
 #[derive(Debug, Clone)]
 pub struct Position {

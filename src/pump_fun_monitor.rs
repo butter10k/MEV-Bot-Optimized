@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
-use tracing::{info, warn, debug, error};
+use tracing::{info, warn, debug};
 use reqwest::Client;
 use chrono;
 use crate::config::SniperConfig;
@@ -318,8 +318,8 @@ impl TokenMonitor {
             }
         }
         
-        for address in to_remove {
-            known.remove(&address);
+        for address in &to_remove {
+            known.remove(address.as_str());
         }
         
         if !to_remove.is_empty() {

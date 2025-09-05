@@ -44,7 +44,7 @@ pub struct SniperConfig {
     pub volume_multiplier: f64,
 }
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub enum BuyStrategy {
     Immediate,
     VolumeSpike,

@@ -1,4 +1,5 @@
 use crate::{config::SniperConfig, notifier::Notifier, trading_strategy::TradingStrategy, technical_analysis::TechnicalAnalysis, risk_management::RiskManager, pump_fun_monitor::TokenMonitor};
+use tracing::error;
 use anyhow::{Result, anyhow};
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{
@@ -11,7 +12,7 @@ use solana_sdk::{
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
-use tracing::{info, warn, debug};
+use tracing::{info, warn, debug};                                                      
 
 pub struct PumpFunSniper {
     config: SniperConfig,
@@ -108,7 +109,6 @@ impl PumpFunSniper {
             return Err(anyhow!(error_msg));
         }
         
-        // Start token monitoring in background
         let monitor = self.token_monitor.clone();
         tokio::spawn(async move {
             if let Err(e) = monitor.start_monitoring().await {
@@ -116,13 +116,10 @@ impl PumpFunSniper {
             }
         });
         
-        // Wait a bit for initial token discovery
         sleep(Duration::from_secs(5)).await;
         
-        // Send initial monitoring stats
-        if let Ok(stats) = self.token_monitor.get_stats().await {
-            let _ = self.notifier.send_alert("🔍 **Token Monitor Started**", &stats.to_string()).await;
-        }
+        let stats = self.token_monitor.get_stats().await;
+        let _ = self.notifier.send_alert("🔍 **Token Monitor Started**", &stats.to_string()).await;
         
         self.monitor_new_tokens().await?;
         
