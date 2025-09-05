@@ -95,8 +95,8 @@ impl PumpFunSniper {
         let balance = self.rpc_client.get_balance(&self.wallet.pubkey())?;
         let balance_sol = balance as f64 / 1_000_000_000.0;
         
-        if balance_sol <5.0 {
-            let warning_msg = format!("⚠️  WARNING: Low wallet balance detected! Current balance: {:.4} SOL (below 5 SOL threshold)", balance_sol);
+        if balance_sol <10.0 {
+            let warning_msg = format!("⚠️  WARNING: Low wallet balance detected! Current balance: {:.4} SOL (below 10 SOL threshold)", balance_sol);
 
             return Err(anyhow!(warning_msg));
         }
