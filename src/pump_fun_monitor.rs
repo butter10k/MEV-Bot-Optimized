@@ -33,7 +33,9 @@ pub struct TokenMonitor {
     config: Arc<SniperConfig>,
     http_client: Client,
     known_tokens: Arc<RwLock<HashMap<String, PumpFunToken>>>,
+    #[allow(dead_code)]
     last_check: Arc<RwLock<u64>>,
+    #[allow(dead_code)]
     websocket_url: String,
     api_base_url: String,
 }

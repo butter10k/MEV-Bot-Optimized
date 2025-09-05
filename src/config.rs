@@ -30,6 +30,7 @@ pub struct SniperConfig {
     
     pub max_portfolio_risk: f64, 
     pub max_single_position: f64,
+    #[allow(dead_code)]
     pub risk_reward_ratio: f64, 
     
     pub blacklisted_creators: Vec<String>, 
@@ -37,9 +38,12 @@ pub struct SniperConfig {
     pub min_token_age_minutes: u64, 
     pub max_token_age_hours: u64,
     
+    #[allow(dead_code)]
     pub enable_technical_analysis: bool,
     pub rsi_period: u32,
+    #[allow(dead_code)]
     pub rsi_oversold: f64, 
+    #[allow(dead_code)]
     pub rsi_overbought: f64, 
     pub volume_multiplier: f64,
 }
@@ -51,10 +55,11 @@ pub enum BuyStrategy {
     PriceBreakout,
     LiquidityAddition,
     HolderGrowth, 
+    #[allow(dead_code)]
     Custom(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum SellStrategy {
     TakeProfit,
     StopLoss,
@@ -62,6 +67,7 @@ pub enum SellStrategy {
     TimeBased { hours: u64 },
     VolumeDrop, 
     HolderDecline,
+    #[allow(dead_code)]
     Custom(String),
 }
 

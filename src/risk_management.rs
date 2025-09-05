@@ -5,6 +5,7 @@ use crate::config::SniperConfig;
 pub struct RiskManager {
     config: SniperConfig,
     total_portfolio_value: f64,
+    #[allow(dead_code)]
     max_risk_per_trade: f64,
 }
 
@@ -19,6 +20,7 @@ impl RiskManager {
         }
     }
 
+    #[allow(dead_code)]
     pub fn calculate_position_size(&self, token_price: f64, stop_loss_price: f64) -> Result<f64> {
         let risk_per_share = (token_price - stop_loss_price).abs();
         
@@ -48,11 +50,13 @@ impl RiskManager {
         Ok(new_total <= max_allowed)
     }
 
+    #[allow(dead_code)]
     pub fn get_portfolio_risk_percentage(&self, current_positions: &[Position]) -> f64 {
         let total_positions_value: f64 = current_positions.iter().map(|p| p.amount_sol).sum();
         (total_positions_value / self.total_portfolio_value) * 100.0
     }
 
+    #[allow(dead_code)]
     pub fn should_close_for_risk(&self, position: &Position, current_price: f64) -> bool {
         if current_price <= position.stop_loss_price {
             return true;
@@ -72,6 +76,7 @@ impl RiskManager {
         false
     }
 
+    #[allow(dead_code)]
     pub fn calculate_dynamic_stop_loss(&self, entry_price: f64, _current_price: f64, volatility: f64) -> f64 {
         let base_stop_loss = entry_price * (1.0 - self.config.stop_loss_percentage / 100.0);
 
@@ -83,6 +88,7 @@ impl RiskManager {
         adjusted_stop_loss.max(min_stop_loss)
     }
 
+    #[allow(dead_code)]
     pub fn calculate_trailing_stop(&self, entry_price: f64, current_price: f64, highest_price: f64) -> f64 {
         if current_price <= entry_price {
             return entry_price * (1.0 - self.config.stop_loss_percentage / 100.0);
@@ -92,6 +98,7 @@ impl RiskManager {
         highest_price * (1.0 - trailing_percentage)
     }
 
+    #[allow(dead_code)]
     pub fn validate_risk_parameters(&self) -> Result<()> {
         if self.config.max_portfolio_risk > 100.0 {
             return Err(anyhow!("Max portfolio risk cannot exceed 100%"));
@@ -112,6 +119,7 @@ impl RiskManager {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_risk_metrics(&self, current_positions: &[Position]) -> RiskMetrics {
         let portfolio_risk = self.get_portfolio_risk_percentage(current_positions);
         let open_positions = current_positions.iter().filter(|p| p.status == crate::trading_strategy::PositionStatus::Open).count();
@@ -133,6 +141,7 @@ impl RiskManager {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct RiskMetrics {
     pub portfolio_risk_percentage: f64,
@@ -143,6 +152,15 @@ pub struct RiskMetrics {
 }
 
 impl RiskMetrics {
+    pub fn is_high_risk(&self) -> bool {
+        self.portfolio_risk_percentage > 80.0
+    }
+    
+    pub fn is_medium_risk(&self) -> bool {
+        self.portfolio_risk_percentage > 50.0 && self.portfolio_risk_percentage <= 80.0
+    }
+    
+    #[allow(dead_code)]
     pub fn is_low_risk(&self) -> bool {
         self.portfolio_risk_percentage <= 50.0
     }

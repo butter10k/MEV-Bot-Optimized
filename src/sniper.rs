@@ -21,6 +21,7 @@ pub struct PumpFunSniper {
     wallet: Keypair,
     trading_strategy: Arc<TradingStrategy>,
     risk_manager: Arc<RiskManager>,
+    #[allow(dead_code)]
     technical_analysis: Arc<TechnicalAnalysis>,
     token_monitor: Arc<TokenMonitor>,
 }
@@ -340,7 +341,9 @@ struct TokenInfo {
     liquidity_sol: f64,
     holder_count: u32,
     market_cap_sol: f64,
+    #[allow(dead_code)]
     creator_address: String,
+    #[allow(dead_code)]
     token_age_minutes: u64,
 }
 

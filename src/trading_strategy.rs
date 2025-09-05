@@ -7,12 +7,14 @@ use tracing::{info};
 
 #[derive(Debug, Clone)]
 pub struct Position {
+    #[allow(dead_code)]
     pub token_address: String,
     pub entry_price: f64,
     pub entry_time: std::time::Instant,
     pub amount_sol: f64,
     pub token_amount: f64,
     pub current_price: f64,
+    #[allow(dead_code)]
     pub pnl_percentage: f64,
     pub stop_loss_price: f64,
     pub take_profit_price: f64,
@@ -55,6 +57,7 @@ impl TradingStrategy {
         Ok(true)
     }
 
+    #[allow(dead_code)]
     pub async fn open_position(&self, token_address: String, amount_sol: f64, entry_price: f64) -> Result<()> {
         let mut positions = self.positions.write().await;
         
@@ -124,6 +127,7 @@ impl TradingStrategy {
         }
     }
 
+    #[allow(dead_code)]
     pub async fn update_position_price(&self, token_address: &str, new_price: f64) -> Result<()> {
         let mut positions = self.positions.write().await;
         
