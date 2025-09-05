@@ -59,7 +59,7 @@ pub enum BuyStrategy {
     Custom(String),
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum SellStrategy {
     TakeProfit,
     StopLoss,

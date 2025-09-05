@@ -152,10 +152,12 @@ pub struct RiskMetrics {
 }
 
 impl RiskMetrics {
+    #[allow(dead_code)]
     pub fn is_high_risk(&self) -> bool {
         self.portfolio_risk_percentage > 80.0
     }
-    
+
+    #[allow(dead_code)]
     pub fn is_medium_risk(&self) -> bool {
         self.portfolio_risk_percentage > 50.0 && self.portfolio_risk_percentage <= 80.0
     }
