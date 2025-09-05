@@ -37,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Starting Pump.fun token sniper...");
     
     sniper.start().await?;
-    
+    nfo
     Ok(())
 }
 

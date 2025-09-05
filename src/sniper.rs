@@ -96,13 +96,11 @@ impl PumpFunSniper {
     }
     
     pub async fn start(&self) -> Result<()> {
-        info!("Starting Pump.fun token sniper...");
-        
         let balance = self.rpc_client.get_balance(&self.wallet.pubkey())?;
         let balance_sol = balance as f64 / 1_000_000_000.0;
         info!("Wallet balance: {} SOL", balance_sol);
         
-        if balance_sol < 0.1 {
+        if balance_sol < 0.0001 {
             let warning_msg = format!("⚠️  WARNING: Low wallet balance detected! Current balance: {:.4} SOL (below 0.1 SOL threshold)", balance_sol);
             warn!("{}", warning_msg);
         }
