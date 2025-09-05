@@ -272,33 +272,18 @@ impl TokenMonitor {
                 Ok(token.volume_24h > self.config.volume_multiplier * 1000.0) // Example threshold
             }
             crate::config::BuyStrategy::PriceBreakout => {
-                Ok(token.price_change_24h > 20.0) // 20% price increase
+                Ok(token.price_change_24h > 20.0) 
             }
             crate::config::BuyStrategy::LiquidityAddition => {
-                // This would require historical liquidity data
                 Ok(token.liquidity_sol > self.config.min_liquidity_sol * 1.5)
             }
             crate::config::BuyStrategy::HolderGrowth => {
-                // This would require historical holder data
                 Ok(token.holder_count > self.config.min_holder_count * 2)
             }
             crate::config::BuyStrategy::Custom(_) => Ok(true),
         }
     }
 
-    /// Get token by address
-    pub async fn get_token(&self, address: &str) -> Option<PumpFunToken> {
-        let known = self.known_tokens.read().await;
-        known.get(address).cloned()
-    }
-
-    /// Get all monitored tokens
-    pub async fn get_all_tokens(&self) -> Vec<PumpFunToken> {
-        let known = self.known_tokens.read().await;
-        known.values().cloned().collect()
-    }
-
-    /// Clean up old tokens that no longer meet criteria
     async fn cleanup_old_tokens(&self) {
         let mut known = self.known_tokens.write().await;
         let current_time = std::time::SystemTime::now()
