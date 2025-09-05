@@ -143,4 +143,20 @@ impl TradingStrategy {
             .cloned()
             .collect()
     }
+
+    pub async fn get_position(&self, token_address: &str) -> Option<Position> {
+        let positions = self.positions.read().await;
+        positions.get(token_address).cloned()
+    }
+
+    pub async fn close_position(&self, token_address: &str) -> Result<()> {
+        let mut positions = self.positions.write().await;
+        
+        if let Some(position) = positions.get_mut(token_address) {
+            position.status = PositionStatus::Closed;
+            info!("Closed position for token: {}", token_address);
+        }
+        
+        Ok(())
+    }
 }

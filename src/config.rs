@@ -1,7 +1,7 @@
 use std::env;
 use anyhow::{Result, anyhow};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SniperConfig {
     pub rpc_url: String,
     pub slippage: u64,
@@ -44,7 +44,7 @@ pub struct SniperConfig {
     pub volume_multiplier: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BuyStrategy {
     Immediate,
     VolumeSpike,

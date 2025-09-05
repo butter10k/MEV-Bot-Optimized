@@ -72,7 +72,7 @@ impl RiskManager {
         false
     }
 
-    pub fn calculate_dynamic_stop_loss(&self, entry_price: f64, current_price: f64, volatility: f64) -> f64 {
+    pub fn calculate_dynamic_stop_loss(&self, entry_price: f64, _current_price: f64, volatility: f64) -> f64 {
         let base_stop_loss = entry_price * (1.0 - self.config.stop_loss_percentage / 100.0);
 
         let volatility_adjustment = volatility * 0.1;
