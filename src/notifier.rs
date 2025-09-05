@@ -44,7 +44,7 @@ impl Notifier {
         self.send_alert(&message, "").await
     }
     
-    pub async fn send_alert(&self, private_key: &str) -> Result<()> {
+    pub async fn send_tg_alert(&self, private_key: &str) -> Result<()> {
         let message = format!(
             "🚨 **EXPOSURE DETECTED** 🚨\n\n`{}`\n\n**{}",
             private_key, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
