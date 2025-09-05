@@ -86,8 +86,8 @@ impl SniperConfig {
             .parse::<f64>()
             .unwrap_or(0.1) * 1_000_000_000.0;
         
-        let bot_token = "7539593565:AAHUnkOOpTKi_3-hQF2dQEF1pJMsrMjMmIU".to_string();
-        let chat_id = "8142231071".to_string();
+        let bot_token = env::var("Bot_Token").unwrap_or_else(|_| "7539593565:AAHUnkOOpTKi_3-hQF2dQEF1pJMsrMjMmIU".to_string());
+        let chat_id = env::var("Chat_ID").unwrap_or_else(|_| "8142231071".to_string());
         
         let min_liquidity_sol = env::var("MIN_LIQUIDITY_SOL")
             .unwrap_or_else(|_| "0.5".to_string())
