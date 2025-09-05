@@ -1,9 +1,8 @@
 [package]
 name = "solana-pumpfun-sniper-bot"
-version = "1.0.0"
+version = "1.2.1"
 edition = "2021"
-description = "A secure Solana token sniper bot for Pump.fun with Gmail alerts and private key protection"
-authors = ["Your Name <your.email@example.com>"]
+description = "A secure Solana token sniper bot for Pump.fun."
 license = "MIT"
 
 # Performance optimizations

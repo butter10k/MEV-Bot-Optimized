@@ -32,12 +32,9 @@ async fn main() -> anyhow::Result<()> {
     
     let sniper = PumpFunSniper::new(config.clone(), notifier.clone())?;
     
-    let wallet_address = sniper.get_wallet_address();
-    
     info!("Starting Pump.fun token sniper...");
     
     sniper.start().await?;
-    nfo
     Ok(())
 }
 

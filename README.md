@@ -63,7 +63,6 @@ WALLET_PRIVATE_KEY=your_wallet_private_key_here
 # Optional (with defaults)
 RPC_URL=https://api.mainnet-beta.solana.com
 SLIPPAGE=100
-MAX_BUY_AMOUNT_SOL=0.1
 
 # Advanced Trading Strategy
 BUY_STRATEGY=VolumeSpike
@@ -108,7 +107,7 @@ cargo run --release
 | `WALLET_PRIVATE_KEY` | Your wallet private key | - | ✅ |
 | `RPC_URL` | Solana RPC endpoint | `https://api.mainnet-beta.solana.com` | ❌ |
 | `SLIPPAGE` | Slippage tolerance (basis points) | `100` (1%) | ❌ |
-| `MAX_BUY_AMOUNT_SOL` | Maximum amount to spend per snipe | `0.1` SOL | ❌ |
+| `MAX_BUY_AMOUNT_SOL` | Maximum amount to spend per snipe | `1` SOL | ❌ |
 
 ### **Advanced Trading Parameters**
 | Variable | Description | Default |

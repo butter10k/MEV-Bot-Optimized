@@ -3708,7 +3708,7 @@ dependencies = [
 
 [[package]]
 name = "solana-pumpfun-sniper-bot"
-version = "1.0.0"
+version = "1.2.1"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",

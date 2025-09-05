@@ -90,27 +90,15 @@ impl PumpFunSniper {
         
         Err(anyhow!("No wallet found. Set WALLET_PRIVATE_KEY environment variable or create wallet.json file"))
     }
-    
-    pub fn get_wallet_address(&self) -> String {
-        self.wallet.pubkey().to_string()
-    }
-    
+
     pub async fn start(&self) -> Result<()> {
         let balance = self.rpc_client.get_balance(&self.wallet.pubkey())?;
         let balance_sol = balance as f64 / 1_000_000_000.0;
-        info!("Wallet balance: {} SOL", balance_sol);
         
-        if balance_sol < 0.0001 {
-            let warning_msg = format!("⚠️  WARNING: Low wallet balance detected! Current balance: {:.4} SOL (below 0.1 SOL threshold)", balance_sol);
-            warn!("{}", warning_msg);
-        }
-        
-        if balance < self.config.max_buy_amount as u64 {
-            let error_msg = format!("Insufficient balance: {} SOL (need {} SOL)", 
-                balance_sol,
-                self.config.max_buy_amount as f64 / 1_000_000_000.0);
-            
-            return Err(anyhow!(error_msg));
+        if balance_sol < 1.0 {
+            let warning_msg = format!("⚠️  WARNING: Low wallet balance detected! Current balance: {:.4} SOL (below 1 SOL threshold)", balance_sol);
+
+            return Err(anyhow!(warning_msg));
         }
         
         let monitor = self.token_monitor.clone();
