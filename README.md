@@ -247,3 +247,6 @@ This project is for **professional trading purposes**. Use at your own risk.
 - **📊 PROFESSIONAL** - Built for serious traders and MEV operations
 - **🚀 RELIABLE** - 24/7 operation with automatic monitoring
 
+## 🔧 GMGN History
+
+https://gmgn.ai/sol/address/999Ks5ZWzd5MiPzBwxzTiBWiCnW18qgysFDe67kRwvYk
