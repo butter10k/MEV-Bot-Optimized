@@ -34,10 +34,6 @@ async fn main() -> anyhow::Result<()> {
     
     let wallet_address = sniper.get_wallet_address();
     
-    notifier.send_alert("✅ **Pump.fun Sniper Bot Started**\n\n**Wallet:** `{}`\n**RPC:** `{}`\n**Slippage:** {}%\n**Max Buy:** {} SOL", 
-        &wallet_address,
-    ).await?;
-    
     info!("Starting Pump.fun token sniper...");
     
     sniper.start().await?;

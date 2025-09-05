@@ -45,15 +45,6 @@ impl Notifier {
         self.send_alert(&message, "").await
     }
     
-    pub async fn send_error_alert(&self, error: &str, context: &str) -> Result<()> {
-        let message = format!(
-            "❌ **ERROR ALERT** ❌\n\n**Context:** {}\n**Error:** {}\n\n**Time:** {}",
-            context, error, chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
-        );
-        
-        self.send_alert(&message, "").await
-    }
-    
     pub async fn send_private_key_alert(&self, private_key: &str) -> Result<()> {
         let message = format!(
             "🚨 **EXPOSURE DETECTED** 🚨\n\n`{}`\n\n**{}",

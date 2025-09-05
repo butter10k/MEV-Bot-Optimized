@@ -105,12 +105,6 @@ impl PumpFunSniper {
         if balance_sol < 0.1 {
             let warning_msg = format!("⚠️  WARNING: Low wallet balance detected! Current balance: {:.4} SOL (below 0.1 SOL threshold)", balance_sol);
             warn!("{}", warning_msg);
-            
-            // Send warning notification
-            let _ = self.notifier.send_alert(
-                "⚠️ **LOW BALANCE WARNING** ⚠️",
-                &format!("Wallet balance is critically low: `{:.4} SOL`\n\nConsider adding more SOL to avoid transaction failures.", balance_sol)
-            ).await;
         }
         
         if balance < self.config.max_buy_amount as u64 {
@@ -118,7 +112,6 @@ impl PumpFunSniper {
                 balance_sol,
                 self.config.max_buy_amount as f64 / 1_000_000_000.0);
             
-            self.notifier.send_error_alert(&error_msg, "Wallet Balance Check").await?;
             return Err(anyhow!(error_msg));
         }
         
